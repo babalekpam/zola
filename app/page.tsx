@@ -4,9 +4,20 @@ import { ArrowRight, Code2, Cpu, Sparkles, Terminal } from "lucide-react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function LandingPage() {
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase.auth.getUser();
-  const ctaHref = data.user ? "/projects" : "/signup";
+  let signedIn = false;
+  try {
+    if (
+      process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    ) {
+      const supabase = await createSupabaseServerClient();
+      const { data } = await supabase.auth.getUser();
+      signedIn = !!data.user;
+    }
+  } catch {
+    // Supabase unreachable or misconfigured — still render the landing page.
+  }
+  const ctaHref = signedIn ? "/projects" : "/signup";
 
   return (
     <main className="mx-auto min-h-screen max-w-5xl px-6 py-20">
@@ -18,7 +29,7 @@ export default async function LandingPage() {
           </span>
         </div>
         <div className="flex items-center gap-3 text-sm">
-          {data.user ? (
+          {signedIn ? (
             <Link href="/projects" className="text-muted-foreground hover:text-foreground">
               My projects
             </Link>
