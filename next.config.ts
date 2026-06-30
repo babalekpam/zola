@@ -1,5 +1,6 @@
 // Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["@webcontainer/api"],
@@ -16,4 +17,15 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+const sentryEnabled = !!process.env.SENTRY_AUTH_TOKEN;
+
+export default sentryEnabled
+  ? withSentryConfig(nextConfig, {
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      silent: true,
+      widenClientFileUpload: true,
+      sourcemaps: { disable: false },
+      disableLogger: true,
+    })
+  : nextConfig;

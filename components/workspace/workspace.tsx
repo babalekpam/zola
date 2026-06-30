@@ -9,14 +9,15 @@ import { FileTree } from "@/components/editor/file-tree";
 import { CodeEditor } from "@/components/editor/code-editor";
 import { WebContainerPreview } from "@/components/preview/webcontainer-preview";
 import { Button } from "@/components/ui/button";
-import type { Project, ProjectFile } from "@/lib/types";
+import type { ChatMessage, Project, ProjectFile } from "@/lib/types";
 
 interface Props {
   project: Project;
   initialFiles: ProjectFile[];
+  initialMessages: ChatMessage[];
 }
 
-export function Workspace({ project, initialFiles }: Props) {
+export function Workspace({ project, initialFiles, initialMessages }: Props) {
   const [files, setFiles] = useState<Record<string, string>>(() =>
     Object.fromEntries(initialFiles.map((f) => [f.path, f.content])),
   );
@@ -106,6 +107,7 @@ export function Workspace({ project, initialFiles }: Props) {
         <ChatPanel
           projectId={project.id}
           files={files}
+          initialMessages={initialMessages}
           onApplyFiles={applyFiles}
         />
       </section>

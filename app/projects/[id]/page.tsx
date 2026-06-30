@@ -2,7 +2,7 @@
 import { notFound } from "next/navigation";
 import { Workspace } from "@/components/workspace/workspace";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { Project, ProjectFile } from "@/lib/types";
+import type { ChatMessage, Project, ProjectFile } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -26,5 +26,18 @@ export default async function ProjectWorkspacePage({
     .eq("project_id", id)
     .returns<ProjectFile[]>();
 
-  return <Workspace project={project} initialFiles={files ?? []} />;
+  const { data: messages } = await supabase
+    .from("messages")
+    .select("*")
+    .eq("project_id", id)
+    .order("created_at", { ascending: true })
+    .returns<ChatMessage[]>();
+
+  return (
+    <Workspace
+      project={project}
+      initialFiles={files ?? []}
+      initialMessages={messages ?? []}
+    />
+  );
 }

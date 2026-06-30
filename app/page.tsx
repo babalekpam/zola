@@ -97,9 +97,17 @@ export default async function LandingPage() {
         />
       </section>
 
-      <footer className="mt-24 flex items-center justify-between border-t border-border pt-8 text-xs text-muted-foreground">
+      <footer className="mt-24 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-8 text-xs text-muted-foreground">
         <span>© 2026 Argilette Lab. All rights reserved.</span>
-        <span>Released under the MIT License.</span>
+        <span className="flex items-center gap-4">
+          <Link href="/terms" className="hover:text-foreground">
+            Terms
+          </Link>
+          <Link href="/privacy" className="hover:text-foreground">
+            Privacy
+          </Link>
+          <span>MIT License</span>
+        </span>
       </footer>
     </main>
   );

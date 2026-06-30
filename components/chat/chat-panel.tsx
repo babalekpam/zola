@@ -11,14 +11,21 @@ import { Button } from "@/components/ui/button";
 import { DEFAULT_MODEL_ID } from "@/lib/ai/models";
 import { parseFileBlocks, stripFileBlocks } from "@/lib/ai/parse-files";
 import { cn } from "@/lib/utils";
+import type { ChatMessage } from "@/lib/types";
 
 interface Props {
   projectId: string;
   files: Record<string, string>;
+  initialMessages?: ChatMessage[];
   onApplyFiles: (files: { path: string; content: string }[]) => void;
 }
 
-export function ChatPanel({ projectId, files, onApplyFiles }: Props) {
+export function ChatPanel({
+  projectId,
+  files,
+  initialMessages,
+  onApplyFiles,
+}: Props) {
   const [modelId, setModelId] = useState(DEFAULT_MODEL_ID);
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastAppliedRef = useRef<string>("");
@@ -32,8 +39,15 @@ export function ChatPanel({ projectId, files, onApplyFiles }: Props) {
     error,
   } = useChat({
     api: "/api/chat",
-    body: { modelId, projectFiles: files },
+    body: { modelId, projectFiles: files, projectId },
     id: projectId,
+    initialMessages: (initialMessages ?? [])
+      .filter((m) => m.role === "user" || m.role === "assistant")
+      .map((m) => ({
+        id: m.id,
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      })),
   });
 
   useEffect(() => {
