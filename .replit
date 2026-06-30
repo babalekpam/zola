@@ -1,0 +1,29 @@
+# Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
+modules = ["nodejs-20"]
+run = "npm run dev"
+entrypoint = "app/page.tsx"
+hidden = [".next", "node_modules", ".vercel"]
+
+[nix]
+channel = "stable-24_05"
+
+[deployment]
+deploymentTarget = "autoscale"
+build = ["sh", "-c", "npm install && npm run build"]
+run = ["sh", "-c", "npm start"]
+
+[env]
+NEXT_TELEMETRY_DISABLED = "1"
+PORT = "3000"
+
+[[ports]]
+localPort = 3000
+externalPort = 80
+
+[languages]
+
+[languages.typescript]
+pattern = "**/{*.ts,*.tsx}"
+
+[languages.typescript.languageServer]
+start = "typescript-language-server --stdio"
