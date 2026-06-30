@@ -1,3 +1,4 @@
+// Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 import type { NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 

@@ -1,3 +1,4 @@
+// Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 import { createBrowserClient } from "@supabase/ssr";
 
 export function createSupabaseBrowserClient() {

@@ -1,3 +1,4 @@
+// Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 import { anthropic } from "@ai-sdk/anthropic";
 import { openai, createOpenAI } from "@ai-sdk/openai";
 import { google } from "@ai-sdk/google";

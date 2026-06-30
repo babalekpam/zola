@@ -1,5 +1,7 @@
 # Zola
 
+> Built and maintained by **Argilette Lab** · © 2026 · MIT License
+
 A Replit/Kimi-style vibe coding platform with multi-LLM routing.
 
 - Chat with **Claude (Opus/Sonnet/Haiku), GPT-5, Gemini 2.5**, plus **Kimi K2, DeepSeek, Llama** via OpenRouter

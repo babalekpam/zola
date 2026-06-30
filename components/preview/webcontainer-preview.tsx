@@ -1,3 +1,4 @@
+// Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";

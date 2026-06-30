@@ -1,3 +1,4 @@
+// Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Plus, Sparkles } from "lucide-react";

@@ -2,6 +2,8 @@
   "name": "zola",
   "version": "0.1.0",
   "private": true,
+  "author": "Argilette Lab",
+  "license": "MIT",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

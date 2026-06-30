@@ -1,3 +1,4 @@
+// Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 import { streamText, type CoreMessage } from "ai";
 import { NextResponse } from "next/server";
 import { resolveModel } from "@/lib/ai/providers";

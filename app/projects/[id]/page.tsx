@@ -1,3 +1,4 @@
+// Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 import { notFound } from "next/navigation";
 import { Workspace } from "@/components/workspace/workspace";
 import { createSupabaseServerClient } from "@/lib/supabase/server";

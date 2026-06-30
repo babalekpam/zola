@@ -1,3 +1,4 @@
+// Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 import Link from "next/link";
 import { ArrowRight, Code2, Cpu, Sparkles, Terminal } from "lucide-react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -12,6 +13,9 @@ export default async function LandingPage() {
       <nav className="flex items-center justify-between pb-16">
         <div className="flex items-center gap-2 text-lg font-semibold">
           <Sparkles className="h-5 w-5 text-primary" /> Zola
+          <span className="ml-2 rounded-full border border-border px-2 py-0.5 text-[10px] font-normal uppercase tracking-wider text-muted-foreground">
+            by Argilette Lab
+          </span>
         </div>
         <div className="flex items-center gap-3 text-sm">
           {data.user ? (
@@ -81,6 +85,11 @@ export default async function LandingPage() {
           body="WebContainers boot a Node.js sandbox in the browser. Vite + React projects run with npm install and hot reload."
         />
       </section>
+
+      <footer className="mt-24 flex items-center justify-between border-t border-border pt-8 text-xs text-muted-foreground">
+        <span>© 2026 Argilette Lab. All rights reserved.</span>
+        <span>Released under the MIT License.</span>
+      </footer>
     </main>
   );
 }

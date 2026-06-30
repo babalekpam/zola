@@ -1,3 +1,4 @@
+// Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
@@ -83,6 +84,9 @@ export function Workspace({ project, initialFiles }: Props) {
             <ArrowLeft className="h-4 w-4" /> Projects
           </Link>
           <span className="text-sm font-semibold">{project.name}</span>
+          <span className="rounded-full border border-border px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+            Argilette Lab
+          </span>
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {dirty ? "Unsaved changes" : "All changes saved"}
