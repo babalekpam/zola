@@ -10,6 +10,7 @@ const PROVIDER_LABEL: Record<ProviderId, string> = {
   openai: "OpenAI",
   google: "Google",
   openrouter: "OpenRouter",
+  nvidia: "NVIDIA NIM",
 };
 
 interface Props {
@@ -39,7 +40,9 @@ export function ModelPicker({ value, onChange }: Props) {
           className="absolute right-0 z-20 mt-1 w-72 overflow-hidden rounded-md border border-border bg-card shadow-lg"
           onMouseLeave={() => setOpen(false)}
         >
-          {(["anthropic", "openai", "google", "openrouter"] as ProviderId[]).map(
+          {(
+            ["nvidia", "anthropic", "openai", "google", "openrouter"] as ProviderId[]
+          ).map(
             (provider) => {
               const models = MODELS.filter((m) => m.provider === provider);
               return (

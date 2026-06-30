@@ -1,4 +1,9 @@
-export type ProviderId = "anthropic" | "openai" | "google" | "openrouter";
+export type ProviderId =
+  | "anthropic"
+  | "openai"
+  | "google"
+  | "openrouter"
+  | "nvidia";
 
 export interface ModelDescriptor {
   id: string;
@@ -98,9 +103,41 @@ export const MODELS: ModelDescriptor[] = [
     description: "Meta's open model",
     contextWindow: 128_000,
   },
+  {
+    id: "nvidia-qwen-coder-32b",
+    label: "Qwen 2.5 Coder 32B (NVIDIA)",
+    provider: "nvidia",
+    modelId: "qwen/qwen2.5-coder-32b-instruct",
+    description: "Strong open-weight coding model on NVIDIA NIM",
+    contextWindow: 32_000,
+  },
+  {
+    id: "nvidia-llama-3.3-70b",
+    label: "Llama 3.3 70B (NVIDIA)",
+    provider: "nvidia",
+    modelId: "meta/llama-3.3-70b-instruct",
+    description: "Meta's flagship open model on NVIDIA NIM",
+    contextWindow: 128_000,
+  },
+  {
+    id: "nvidia-deepseek-r1",
+    label: "DeepSeek R1 (NVIDIA)",
+    provider: "nvidia",
+    modelId: "deepseek-ai/deepseek-r1",
+    description: "Open-weight reasoning model on NVIDIA NIM",
+    contextWindow: 128_000,
+  },
+  {
+    id: "nvidia-llama-3.1-nemotron-70b",
+    label: "Llama 3.1 Nemotron 70B (NVIDIA)",
+    provider: "nvidia",
+    modelId: "nvidia/llama-3.1-nemotron-70b-instruct",
+    description: "NVIDIA-tuned Llama, strong general-purpose",
+    contextWindow: 128_000,
+  },
 ];
 
-export const DEFAULT_MODEL_ID = "claude-sonnet-4-6";
+export const DEFAULT_MODEL_ID = "nvidia-qwen-coder-32b";
 
 export function getModelById(id: string): ModelDescriptor | undefined {
   return MODELS.find((m) => m.id === id);
