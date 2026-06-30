@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Turnstile } from "@/components/auth/turnstile";
+import { OAuthButtons } from "@/components/auth/oauth-buttons";
 
 const TURNSTILE_REQUIRED = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -51,6 +52,7 @@ export default function LoginPage() {
           <h1 className="text-2xl font-semibold">Welcome back</h1>
           <p className="text-sm text-muted-foreground">Sign in to keep building.</p>
         </div>
+        <OAuthButtons />
         <input
           className="w-full rounded-md border border-border bg-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
           type="email"

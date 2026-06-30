@@ -28,14 +28,28 @@ export default async function ProjectsPage() {
             <Sparkles className="h-5 w-5 text-primary" /> Zola
           </Link>
         </div>
-        <form action="/auth/signout" method="post">
-          <button
-            type="submit"
-            className="text-sm text-muted-foreground hover:text-foreground"
+        <div className="flex items-center gap-4 text-sm">
+          <Link
+            href="/billing"
+            className="text-muted-foreground hover:text-foreground"
           >
-            Sign out
-          </button>
-        </form>
+            Billing
+          </Link>
+          <Link
+            href="/account"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            Account
+          </Link>
+          <form action="/auth/signout" method="post">
+            <button
+              type="submit"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              Sign out
+            </button>
+          </form>
+        </div>
       </header>
 
       <div className="mb-6 flex items-center justify-between">

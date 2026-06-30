@@ -6,6 +6,7 @@ import { useChat } from "@ai-sdk/react";
 import { Send, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { toast } from "sonner";
 import { ModelPicker } from "./model-picker";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_MODEL_ID } from "@/lib/ai/models";
@@ -48,6 +49,16 @@ export function ChatPanel({
         role: m.role as "user" | "assistant",
         content: m.content,
       })),
+    onError(err) {
+      const msg = err.message ?? "Chat request failed";
+      if (msg.toLowerCase().includes("rate limit")) {
+        toast.error("Rate limit hit — wait a minute before sending more.");
+      } else if (msg.toLowerCase().includes("unauthorized")) {
+        toast.error("Session expired — please sign in again.");
+      } else {
+        toast.error(msg.slice(0, 200));
+      }
+    },
   });
 
   useEffect(() => {

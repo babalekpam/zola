@@ -20,15 +20,27 @@ export default async function LandingPage() {
   const ctaHref = signedIn ? "/projects" : "/signup";
 
   return (
-    <main className="mx-auto min-h-screen max-w-5xl px-6 py-20">
-      <nav className="flex items-center justify-between pb-16">
+    <main className="mx-auto min-h-screen max-w-5xl px-6 py-10 sm:py-20">
+      <nav className="flex flex-wrap items-center justify-between gap-3 pb-10 sm:pb-16">
         <div className="flex items-center gap-2 text-lg font-semibold">
           <Sparkles className="h-5 w-5 text-primary" /> Zola
           <span className="ml-2 rounded-full border border-border px-2 py-0.5 text-[10px] font-normal uppercase tracking-wider text-muted-foreground">
             by Argilette Lab
           </span>
         </div>
-        <div className="flex items-center gap-3 text-sm">
+        <div className="flex items-center gap-4 text-sm">
+          <Link
+            href="/pricing"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            Pricing
+          </Link>
+          <Link
+            href="/about"
+            className="hidden text-muted-foreground hover:text-foreground sm:inline"
+          >
+            About
+          </Link>
           {signedIn ? (
             <Link href="/projects" className="text-muted-foreground hover:text-foreground">
               My projects
@@ -56,7 +68,7 @@ export default async function LandingPage() {
         <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground">
           <Sparkles className="h-3.5 w-3.5" /> Vibe-coding for the multi-LLM era
         </span>
-        <h1 className="text-5xl font-bold tracking-tight md:text-6xl">
+        <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl md:text-6xl">
           Build apps by chatting.
           <br />
           <span className="text-muted-foreground">
@@ -79,7 +91,7 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <section className="mt-24 grid gap-6 md:grid-cols-3">
+      <section className="mt-16 grid gap-6 sm:mt-24 md:grid-cols-3">
         <Feature
           icon={<Cpu className="h-5 w-5" />}
           title="Multi-LLM router"
@@ -99,7 +111,16 @@ export default async function LandingPage() {
 
       <footer className="mt-24 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-8 text-xs text-muted-foreground">
         <span>© 2026 Argilette Lab. All rights reserved.</span>
-        <span className="flex items-center gap-4">
+        <span className="flex flex-wrap items-center gap-4">
+          <Link href="/about" className="hover:text-foreground">
+            About
+          </Link>
+          <Link href="/pricing" className="hover:text-foreground">
+            Pricing
+          </Link>
+          <Link href="/contact" className="hover:text-foreground">
+            Contact
+          </Link>
           <Link href="/terms" className="hover:text-foreground">
             Terms
           </Link>
