@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
-import OAuthButtons from "@/components/auth/oauth-buttons";
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined;
 const TURNSTILE_REQUIRED = !!TURNSTILE_SITE_KEY;
@@ -31,12 +30,6 @@ export default function LoginPage() {
         <div>
           <h1 className="text-2xl font-semibold">Welcome back</h1>
           <p className="text-sm text-muted-foreground">Sign in to keep building.</p>
-        </div>
-        <OAuthButtons />
-        <div className="relative flex items-center">
-          <div className="flex-1 border-t border-border" />
-          <span className="mx-3 text-xs text-muted-foreground">or</span>
-          <div className="flex-1 border-t border-border" />
         </div>
         <input
           className="w-full rounded-md border border-border bg-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
