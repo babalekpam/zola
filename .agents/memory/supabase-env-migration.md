@@ -25,3 +25,20 @@ them into the bundle). After any framework migration, reconcile secret *names* w
 new framework's required prefix, or widen `envPrefix`. Verify a production build actually
 inlines the value (grep the built bundle) rather than trusting dev, since dev and the
 static build resolve env differently.
+
+## Server side had the same bug (api-server)
+
+The Express **api-server** read `process.env.VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`
+directly with no fallback (in `lib/supabase.ts`, plus service-role reads in `routes/stripe.ts`
+and `routes/account.ts`). Those secrets don't exist — only `NEXT_PUBLIC_*` do — so
+`createServerClient` threw *"Your project's URL and Key are required to create a Supabase
+client!"* and every `/api/projects` request 500'd. The frontend kept retrying → the app
+appeared to "loop non-stop" after login.
+
+**Fix:** `lib/supabase.ts` now exports `SUPABASE_URL` / `SUPABASE_ANON_KEY` resolved as
+`VITE_* ?? NEXT_PUBLIC_*`; stripe/account import those instead of reading `process.env`
+directly. **Rule:** the server has NO envPrefix mechanism — it reads `process.env` raw, so
+it must use the exact secret name. When client and server share credentials, resolve them
+through one fallback-aware helper so a rename can't half-break only the backend. Only
+`NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` are set; `SUPABASE_SERVICE_ROLE_KEY`
+is NOT set (account-deletion / stripe admin paths stay disabled until it is).

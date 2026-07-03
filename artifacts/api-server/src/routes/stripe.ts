@@ -3,7 +3,7 @@ import { Router } from "express";
 import { createClient } from "@supabase/supabase-js";
 import { getStripe, stripeEnabled } from "../lib/billing/stripe";
 import { PLANS, type PlanId } from "../lib/billing/plans";
-import { createSupabaseServerClient } from "../lib/supabase";
+import { createSupabaseServerClient, SUPABASE_URL } from "../lib/supabase";
 import type Stripe from "stripe";
 
 const router = Router();
@@ -100,7 +100,7 @@ router.post("/stripe/webhook", async (req, res) => {
   }
 
   function adminClient() {
-    const url = process.env.VITE_SUPABASE_URL;
+    const url = SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!url || !key) throw new Error("Service-role Supabase not configured");
     return createClient(url, key, { auth: { persistSession: false } });

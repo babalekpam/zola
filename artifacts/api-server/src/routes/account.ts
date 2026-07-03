@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 import { Router } from "express";
 import { createClient } from "@supabase/supabase-js";
-import { createSupabaseServerClient } from "../lib/supabase";
+import { createSupabaseServerClient, SUPABASE_URL } from "../lib/supabase";
 
 const router = Router();
 
@@ -14,7 +14,7 @@ router.delete("/account", async (req, res) => {
   }
 
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const url = process.env.VITE_SUPABASE_URL;
+  const url = SUPABASE_URL;
   if (!serviceKey || !url) {
     res.status(500).json({
       error: "Account deletion is not configured. Set SUPABASE_SERVICE_ROLE_KEY.",
