@@ -1,3 +1,4 @@
 - [Zola theme](zola-theme.md) — Cursor-inspired warm cream (oklch ~0.975 chroma 0.008 hue 80), light mode, dark primary buttons
 - [Supabase env prefix mismatch](supabase-env-migration.md) — after Next.js→Vite, secrets were NEXT_PUBLIC_* but code read VITE_*; widen envPrefix + fallback.
 - [AI SDK version alignment](ai-sdk-version-alignment.md) — @ai-sdk/* package majors are independent of `ai` core major; mixing generations makes useChat return undefined `input` → crash.
+- [WebContainer cross-origin isolation](webcontainer-cross-origin-isolation.md) — Zola preview needs COOP:same-origin + COEP:credentialless in vite.config so SharedArrayBuffer/crossOriginIsolated works behind Replit proxy.

@@ -11,10 +11,19 @@ export const SUPABASE_ANON_KEY =
   process.env.VITE_SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 export function createSupabaseServerClient(req: Request, res: Response) {
+  // Web clients authenticate via cookies (SSR). Native/mobile clients cannot
+  // send Supabase cookies, so they attach `Authorization: Bearer <access_token>`
+  // instead. When that header is present we forward it as a global header so
+  // both `auth.getUser()` and RLS-protected PostgREST queries use the token.
+  // Web is unaffected: with no Authorization header, the cookie flow is used.
+  const authHeader = req.headers.authorization;
   return createServerClient(
     SUPABASE_URL!,
     SUPABASE_ANON_KEY!,
     {
+      ...(authHeader
+        ? { global: { headers: { Authorization: authHeader } } }
+        : {}),
       cookies: {
         getAll() {
           // Parse cookies from the request

@@ -51,6 +51,11 @@ export function WebContainerPreview({ files }: Props) {
       setStatus("booting");
       addLog("Booting WebContainer…");
       try {
+        if (!self.crossOriginIsolated) {
+          throw new Error(
+            "This browser context is not cross-origin isolated, so the in-browser Node preview can't start. Open the app in a top-level browser tab (or use a supported browser) and try again.",
+          );
+        }
         wcInstance = await WebContainer.boot();
         addLog("WebContainer booted.");
         if (cancelled) return;

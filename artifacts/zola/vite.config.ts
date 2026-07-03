@@ -64,6 +64,14 @@ export default defineConfig({
     strictPort: true,
     host: "0.0.0.0",
     allowedHosts: true,
+    headers: {
+      // WebContainer needs SharedArrayBuffer, which requires the document to be
+      // cross-origin isolated. COOP + COEP (credentialless) enable
+      // self.crossOriginIsolated. credentialless lets cross-origin subresources
+      // (Supabase, fonts, Replit dev banner) load without needing CORP headers.
+      "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Embedder-Policy": "credentialless",
+    },
     fs: {
       strict: true,
     },
@@ -78,5 +86,9 @@ export default defineConfig({
     port,
     host: "0.0.0.0",
     allowedHosts: true,
+    headers: {
+      "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Embedder-Policy": "credentialless",
+    },
   },
 });
