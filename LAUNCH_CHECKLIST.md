@@ -2,7 +2,7 @@
 
 > Built and maintained by **Argilette Lab** · © 2026 · MIT License
 
-Run through this before you announce Zola to real users.
+Run through this before you announce Loop to real users.
 
 ## 1. Database
 
@@ -96,7 +96,7 @@ After deploy, do all of these manually:
 ## 10. Legal + brand
 
 - [ ] Replace placeholder addresses in `/terms` and `/privacy` with your real legal entity + jurisdiction
-- [ ] Update `support@argilette.com`, `legal@argilette.com`, etc. on /contact to your actual mailboxes (or set up the aliases)
+- [ ] Update `support@loopafrica.org`, `legal@loopafrica.org`, etc. on /contact to your actual mailboxes (or set up the aliases)
 - [ ] Decide on launch communication (X/Twitter, Product Hunt, Hacker News Show HN)
 
 ---

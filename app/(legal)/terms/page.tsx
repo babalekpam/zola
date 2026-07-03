@@ -2,7 +2,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Terms of Service · Zola by Argilette Lab",
+  title: "Terms of Service · Loop by Argilette Lab",
 };
 
 export default function TermsPage() {
@@ -14,7 +14,7 @@ export default function TermsPage() {
       </p>
 
       <p>
-        These Terms of Service (&quot;Terms&quot;) govern your use of Zola (the
+        These Terms of Service (&quot;Terms&quot;) govern your use of Loop (the
         &quot;Service&quot;), operated by Argilette Lab (&quot;we&quot;,
         &quot;us&quot;, or &quot;our&quot;). By creating an account or using the
         Service you agree to these Terms.
@@ -22,7 +22,7 @@ export default function TermsPage() {
 
       <h2>1. The Service</h2>
       <p>
-        Zola is an AI-assisted coding workspace that lets you generate, edit,
+        Loop is an AI-assisted coding workspace that lets you generate, edit,
         and preview web applications. Generations are produced by third-party
         large language models (Anthropic, OpenAI, Google, NVIDIA, OpenRouter)
         routed at your selection. The Service is provided &quot;as is&quot;
@@ -117,7 +117,7 @@ export default function TermsPage() {
       <h2>11. Contact</h2>
       <p>
         Questions? Reach us at{" "}
-        <a href="mailto:legal@argilette.com">legal@argilette.com</a>.
+        <a href="mailto:legal@loopafrica.org">legal@loopafrica.org</a>.
       </p>
     </>
   );

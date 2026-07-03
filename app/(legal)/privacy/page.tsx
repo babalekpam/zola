@@ -2,7 +2,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy · Zola by Argilette Lab",
+  title: "Privacy Policy · Loop by Argilette Lab",
 };
 
 export default function PrivacyPage() {
@@ -15,7 +15,7 @@ export default function PrivacyPage() {
 
       <p>
         This Privacy Policy explains how Argilette Lab (&quot;we&quot;) collects,
-        uses, and protects personal information when you use Zola (the
+        uses, and protects personal information when you use Loop (the
         &quot;Service&quot;).
       </p>
 
@@ -94,7 +94,7 @@ export default function PrivacyPage() {
         data-protection laws, you have the right to access, correct, export, or
         delete your personal information, and to object to certain processing.
         To exercise these rights, email{" "}
-        <a href="mailto:privacy@argilette.com">privacy@argilette.com</a>.
+        <a href="mailto:privacy@loopafrica.org">privacy@loopafrica.org</a>.
       </p>
 
       <h2>6. Cookies</h2>
@@ -120,7 +120,7 @@ export default function PrivacyPage() {
       <h2>9. Contact</h2>
       <p>
         Email{" "}
-        <a href="mailto:privacy@argilette.com">privacy@argilette.com</a> with
+        <a href="mailto:privacy@loopafrica.org">privacy@loopafrica.org</a> with
         any questions or requests.
       </p>
     </>

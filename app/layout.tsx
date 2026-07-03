@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
-  title: "Zola — Vibe code with any LLM · by Argilette Lab",
+  title: "Loop — Vibe code with any LLM · by Argilette Lab",
   description:
     "AI coding workspace with chat, file editor, live preview, and multi-LLM routing across Claude, GPT, Gemini, NVIDIA NIM, and OpenRouter. Built by Argilette Lab.",
   authors: [{ name: "Argilette Lab" }],

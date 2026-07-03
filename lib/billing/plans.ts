@@ -16,7 +16,7 @@ export const PLANS: Plan[] = [
     id: "free",
     name: "Free",
     priceMonthly: 0,
-    blurb: "Try Zola, no card required.",
+    blurb: "Try Loop, no card required.",
     features: [
       "15 AI requests per minute",
       "Unlimited projects",

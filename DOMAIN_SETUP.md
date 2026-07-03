@@ -2,7 +2,7 @@
 
 > Built and maintained by **Argilette Lab** · © 2026 · MIT License
 
-Once Zola is deployed (Vercel/Replit/Netlify), here's how to point a custom domain at it.
+Once Loop is deployed (Vercel/Replit/Netlify), here's how to point a custom domain at it.
 
 ## 1. Buy a domain
 
@@ -13,7 +13,7 @@ Pick a registrar:
 - **Porkbun** — clean UI, very cheap
 - **Google Domains / Squarespace Domains** — easy if you already use Google
 
-Search and buy something like `getzola.com`, `argilette.com`, `zola.dev`. Avoid hyphens.
+Search and buy something like `getzola.com`, `loopafrica.org`, `zola.dev`. Avoid hyphens.
 
 ## 2. Add the domain to Vercel
 

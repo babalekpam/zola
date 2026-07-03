@@ -4,7 +4,7 @@ import type { MetadataRoute } from "next";
 export default function sitemap(): MetadataRoute.Sitemap {
   const base =
     process.env.NEXT_PUBLIC_SITE_URL ??
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://zola.argilette.com");
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://loopafrica.org");
   const now = new Date();
   return [
     { url: `${base}/`, lastModified: now, priority: 1.0 },

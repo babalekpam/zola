@@ -4,7 +4,7 @@ import { Sparkles, Mail, Github, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Contact · Zola by Argilette Lab",
+  title: "Contact · Loop by Argilette Lab",
 };
 
 export default function ContactPage() {
@@ -12,7 +12,7 @@ export default function ContactPage() {
     <main className="mx-auto min-h-screen max-w-2xl px-6 py-16">
       <nav className="mb-12 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
-          <Sparkles className="h-5 w-5 text-primary" /> Zola
+          <Sparkles className="h-5 w-5 text-primary" /> Loop
         </Link>
         <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
           ← Home
@@ -29,26 +29,26 @@ export default function ContactPage() {
         <Row
           icon={<Mail className="h-4 w-4" />}
           label="General &amp; product"
-          value="hello@argilette.com"
-          href="mailto:hello@argilette.com"
+          value="hello@loopafrica.org"
+          href="mailto:hello@loopafrica.org"
         />
         <Row
           icon={<Mail className="h-4 w-4" />}
           label="Support"
-          value="support@argilette.com"
-          href="mailto:support@argilette.com"
+          value="support@loopafrica.org"
+          href="mailto:support@loopafrica.org"
         />
         <Row
           icon={<ShieldCheck className="h-4 w-4" />}
           label="Security disclosures"
-          value="security@argilette.com"
-          href="mailto:security@argilette.com"
+          value="security@loopafrica.org"
+          href="mailto:security@loopafrica.org"
         />
         <Row
           icon={<Mail className="h-4 w-4" />}
           label="Legal &amp; privacy"
-          value="legal@argilette.com"
-          href="mailto:legal@argilette.com"
+          value="legal@loopafrica.org"
+          href="mailto:legal@loopafrica.org"
         />
         <Row
           icon={<Github className="h-4 w-4" />}

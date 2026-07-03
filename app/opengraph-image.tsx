@@ -2,7 +2,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "Zola — Vibe code with any LLM, by Argilette Lab";
+export const alt = "Loop — Vibe code with any LLM, by Argilette Lab";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -39,7 +39,7 @@ export default function OG() {
           >
             Z
           </div>
-          <span style={{ fontSize: 28, fontWeight: 600 }}>Zola</span>
+          <span style={{ fontSize: 28, fontWeight: 600 }}>Loop</span>
           <span
             style={{
               padding: "4px 10px",

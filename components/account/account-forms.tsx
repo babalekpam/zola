@@ -72,8 +72,8 @@ export function AccountForms({ email }: Props) {
           {email}{" "}
           <span className="ml-1 text-xs">
             (To change your email, contact{" "}
-            <a className="underline" href="mailto:support@argilette.com">
-              support@argilette.com
+            <a className="underline" href="mailto:support@loopafrica.org">
+              support@loopafrica.org
             </a>
             )
           </span>

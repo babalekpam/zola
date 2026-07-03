@@ -1,4 +1,4 @@
-# Zola
+# Loop
 
 > Built and maintained by **Argilette Lab** · © 2026 · MIT License
 

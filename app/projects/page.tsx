@@ -25,7 +25,7 @@ export default async function ProjectsPage() {
       <header className="mb-8 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
-            <Sparkles className="h-5 w-5 text-primary" /> Zola
+            <Sparkles className="h-5 w-5 text-primary" /> Loop
           </Link>
         </div>
         <div className="flex items-center gap-4 text-sm">
@@ -81,7 +81,7 @@ function EmptyProjects() {
       <Plus className="mb-3 h-8 w-8 text-muted-foreground" />
       <h3 className="text-lg font-semibold">No projects yet</h3>
       <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-        Create your first project and ask Zola to build something. The preview
+        Create your first project and ask Loop to build something. The preview
         will boot in your browser.
       </p>
     </div>

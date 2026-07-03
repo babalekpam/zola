@@ -87,7 +87,7 @@ export function ChatPanel({
       <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
         <div className="flex items-center gap-2 text-sm font-medium">
           <Sparkles className="h-4 w-4 text-primary" />
-          Zola Chat
+          Loop Chat
         </div>
         <ModelPicker value={modelId} onChange={setModelId} />
       </div>
@@ -115,7 +115,7 @@ export function ChatPanel({
           <textarea
             value={input}
             onChange={handleInputChange}
-            placeholder="Ask Zola to build, refactor, or fix something…"
+            placeholder="Ask Loop to build, refactor, or fix something…"
             rows={2}
             className="flex-1 resize-none bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             onKeyDown={(e) => {
@@ -141,7 +141,7 @@ function EmptyState() {
       <h2 className="text-lg font-semibold">Vibe-code your next idea</h2>
       <p className="mt-1 max-w-sm text-sm text-muted-foreground">
         Try “Build a Pomodoro timer with dark mode” or “Add a navbar with React
-        Router”. Zola will write the files and the preview will reload.
+        Router”. Loop will write the files and the preview will reload.
       </p>
     </div>
   );

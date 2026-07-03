@@ -141,7 +141,7 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
       <div className="flex h-screen w-screen flex-col items-center justify-center bg-background p-8 text-center md:hidden">
         <h2 className="text-xl font-semibold">Workspace is desktop-only</h2>
         <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-          The Zola workspace (chat + editor + preview) needs a wider screen.
+          The Loop workspace (chat + editor + preview) needs a wider screen.
           Open this page on a laptop or larger tablet.
         </p>
         <Link

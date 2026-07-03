@@ -1,5 +1,5 @@
 -- Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
--- Zola: projects + files schema with row-level security
+-- Loop: projects + files schema with row-level security
 
 create extension if not exists "pgcrypto";
 

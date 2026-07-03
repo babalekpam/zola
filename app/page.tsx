@@ -23,7 +23,7 @@ export default async function LandingPage() {
     <main className="mx-auto min-h-screen max-w-5xl px-6 py-10 sm:py-20">
       <nav className="flex flex-wrap items-center justify-between gap-3 pb-10 sm:pb-16">
         <div className="flex items-center gap-2 text-lg font-semibold">
-          <Sparkles className="h-5 w-5 text-primary" /> Zola
+          <Sparkles className="h-5 w-5 text-primary" /> Loop
           <span className="ml-2 rounded-full border border-border px-2 py-0.5 text-[10px] font-normal uppercase tracking-wider text-muted-foreground">
             by Argilette Lab
           </span>
@@ -76,7 +76,7 @@ export default async function LandingPage() {
           </span>
         </h1>
         <p className="max-w-2xl text-lg text-muted-foreground">
-          Zola is a Replit-style coding workspace where you describe what you
+          Loop is a Replit-style coding workspace where you describe what you
           want, the model writes the files, and a live preview boots in the
           browser. Switch between Claude, GPT, Gemini, and OpenRouter models on
           the fly.

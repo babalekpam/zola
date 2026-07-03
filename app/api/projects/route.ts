@@ -61,7 +61,7 @@ function starterFiles(): Record<string, string> {
   return {
     "package.json": JSON.stringify(
       {
-        name: "zola-project",
+        name: "loop-project",
         private: true,
         type: "module",
         scripts: { dev: "vite", build: "vite build", preview: "vite preview" },
@@ -83,7 +83,7 @@ function starterFiles(): Record<string, string> {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Zola App</title>
+    <title>Loop App</title>
   </head>
   <body>
     <div id="root"></div>
@@ -104,7 +104,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     "src/App.tsx": `export default function App() {
   return (
     <main style={{ fontFamily: "system-ui", padding: 48, textAlign: "center" }}>
-      <h1>Hello from Zola</h1>
+      <h1>Hello from Loop</h1>
       <p>Ask the AI on the left to build something.</p>
     </main>
   );
