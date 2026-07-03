@@ -1,15 +1,10 @@
 // Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 import { Router } from "express";
-import { streamText } from "ai";
+import { streamText, type CoreMessage } from "ai";
 import { resolveModel } from "../lib/ai/providers";
 import { CODING_SYSTEM_PROMPT } from "../lib/ai/system-prompt";
 import { DEFAULT_MODEL_ID } from "../lib/ai/models";
 import { createSupabaseServerClient } from "../lib/supabase";
-
-type CoreMessage = {
-  role: "user" | "assistant" | "system";
-  content: string | Array<{ type: string; text?: string; [key: string]: unknown }>;
-};
 
 const router = Router();
 
@@ -79,7 +74,7 @@ router.post("/chat", async (req, res) => {
       },
     });
 
-    result.pipeUIMessageStreamToResponse(res);
+    result.pipeDataStreamToResponse(res);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     req.log.error({ err }, "chat route error");

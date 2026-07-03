@@ -10,7 +10,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
-    "@ai-sdk/react": "^4.0.12",
+    "@ai-sdk/react": "^1.0.0",
     "@hookform/resolvers": "^3.10.0",
     "@monaco-editor/react": "^4.7.0",
     "@radix-ui/react-accordion": "^1.2.4",
@@ -54,7 +54,7 @@
     "@vitejs/plugin-react": "catalog:",
     "@webcontainer/api": "^1.6.4",
     "@workspace/api-client-react": "workspace:*",
-    "ai": "^7.0.11",
+    "ai": "^4.0.0",
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",
     "cmdk": "^1.1.1",
