@@ -1,29 +1,20 @@
-# Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
-modules = ["nodejs-20"]
-run = "npm run dev"
-entrypoint = "app/page.tsx"
-hidden = [".next", "node_modules", ".vercel"]
-
-[nix]
-channel = "stable-24_05"
+modules = ["nodejs-24"]
 
 [deployment]
+router = "application"
 deploymentTarget = "autoscale"
-build = ["sh", "-c", "npm install && npm run build"]
-run = ["sh", "-c", "npm start"]
 
-[env]
-NEXT_TELEMETRY_DISABLED = "1"
-PORT = "3000"
+[deployment.postBuild]
+args = ["pnpm", "store", "prune"]
+env = { "CI" = "true" }
 
-[[ports]]
-localPort = 3000
-externalPort = 80
+[workflows]
+runButton = "Project"
 
-[languages]
+[agent]
+stack = "PNPM_WORKSPACE"
+expertMode = true
 
-[languages.typescript]
-pattern = "**/{*.ts,*.tsx}"
-
-[languages.typescript.languageServer]
-start = "typescript-language-server --stdio"
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 20000
