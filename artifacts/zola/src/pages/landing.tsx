@@ -11,7 +11,7 @@ export default function LandingPage() {
     <main className="mx-auto min-h-screen max-w-5xl px-6 py-10 sm:py-20">
       <nav className="flex flex-wrap items-center justify-between gap-3 pb-10 sm:pb-16">
         <div className="flex items-center gap-2 text-lg font-semibold">
-          <Sparkles className="h-5 w-5 text-primary" /> Zola
+          <Sparkles className="h-5 w-5 text-primary" /> Loop
           <span className="ml-2 rounded-full border border-border px-2 py-0.5 text-[10px] font-normal uppercase tracking-wider text-muted-foreground">
             by Argilette Lab
           </span>
@@ -39,7 +39,7 @@ export default function LandingPage() {
           <span className="text-muted-foreground">Run them in the browser.</span>
         </h1>
         <p className="max-w-2xl text-lg text-muted-foreground">
-          Zola is a coding workspace where you describe what you want, the model writes the files, and a live preview boots in your browser — no servers, no deploys, no waiting.
+          Loop is a coding workspace where you describe what you want, the model writes the files, and a live preview boots in your browser — no servers, no deploys, no waiting.
         </p>
         <div className="flex flex-wrap gap-3">
           <Link href={ctaHref} className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 font-medium text-primary-foreground">

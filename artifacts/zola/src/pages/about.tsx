@@ -7,22 +7,22 @@ export default function AboutPage() {
     <main className="mx-auto min-h-screen max-w-2xl px-6 py-12">
       <header className="mb-10 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
-          <Sparkles className="h-5 w-5 text-primary" /> Zola
+          <Sparkles className="h-5 w-5 text-primary" /> Loop
         </Link>
         <Link href="/" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Back
         </Link>
       </header>
       <article className="prose prose-invert max-w-none">
-        <h1>About Zola</h1>
+        <h1>About Loop</h1>
         <p>
-          Zola is a vibe-coding workspace built by <strong>Argilette Lab</strong>. It lets you describe
+          Loop is a vibe-coding workspace built by <strong>Argilette Lab</strong>. It lets you describe
           what you want in plain English and have a frontier AI model write the code, while a live
           Node.js sandbox (powered by WebContainers) runs it instantly in your browser.
         </p>
-        <h2>Why Zola?</h2>
+        <h2>Why Loop?</h2>
         <p>
-          Most AI coding tools force you to pick one model. Zola routes your chat to whichever
+          Most AI coding tools force you to pick one model. Loop routes your chat to whichever
           model is best for your task — Claude for reasoning, GPT for general work, Gemini for long
           context, NVIDIA NIM for open-weight models — without switching tabs.
         </p>

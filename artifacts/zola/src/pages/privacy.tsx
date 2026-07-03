@@ -7,7 +7,7 @@ export default function PrivacyPage() {
     <main className="mx-auto min-h-screen max-w-2xl px-6 py-12">
       <header className="mb-10 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
-          <Sparkles className="h-5 w-5 text-primary" /> Zola
+          <Sparkles className="h-5 w-5 text-primary" /> Loop
         </Link>
         <Link href="/" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Back
@@ -17,13 +17,13 @@ export default function PrivacyPage() {
         <h1>Privacy Policy</h1>
         <p className="text-muted-foreground">Last updated: July 3, 2026</p>
         <p>
-          Argilette Lab ("we," "us," or "our") operates the Zola service. This policy explains how we
+          Argilette Lab ("we," "us," or "our") operates the Loop service. This policy explains how we
           collect, use, and protect your data.
         </p>
         <h2>1. What we collect</h2>
         <ul>
           <li>Email address and auth credentials (via Supabase)</li>
-          <li>Project files and chat messages you create in Zola</li>
+          <li>Project files and chat messages you create in Loop</li>
           <li>Usage data (request counts, model selections)</li>
           <li>Payment data (processed by Stripe — we do not store card numbers)</li>
         </ul>

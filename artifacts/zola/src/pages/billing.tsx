@@ -83,7 +83,7 @@ export default function BillingPage() {
           <ArrowLeft className="h-4 w-4" /> Projects
         </Link>
         <Link href="/" className="flex items-center gap-2 text-base font-semibold">
-          <Sparkles className="h-4 w-4 text-primary" /> Zola
+          <Sparkles className="h-4 w-4 text-primary" /> Loop
         </Link>
       </header>
 

@@ -68,7 +68,7 @@ export function ChatPanel({ projectId, files, initialMessages, onApplyFiles }: P
       <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
         <div className="flex items-center gap-2 text-sm font-medium">
           <Sparkles className="h-4 w-4 text-primary" />
-          Zola Chat
+          Loop Chat
         </div>
         <ModelPicker value={modelId} onChange={setModelId} />
       </div>
@@ -88,7 +88,7 @@ export function ChatPanel({ projectId, files, initialMessages, onApplyFiles }: P
         ) : null}
         {busy && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="animate-pulse">Zola is thinking…</span>
+            <span className="animate-pulse">Loop is thinking…</span>
           </div>
         )}
       </div>
@@ -98,7 +98,7 @@ export function ChatPanel({ projectId, files, initialMessages, onApplyFiles }: P
           <textarea
             value={input}
             onChange={handleInputChange}
-            placeholder="Ask Zola to build, refactor, or fix something…"
+            placeholder="Ask Loop to build, refactor, or fix something…"
             rows={2}
             className="flex-1 resize-none bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             onKeyDown={(e) => {
@@ -128,7 +128,7 @@ function EmptyState() {
       <h2 className="text-lg font-semibold">Vibe-code your next idea</h2>
       <p className="mt-1 max-w-sm text-sm text-muted-foreground">
         Try "Build a Pomodoro timer with dark mode" or "Add a navbar with React Router".
-        Zola will write the files and the preview will reload.
+        Loop will write the files and the preview will reload.
       </p>
     </div>
   );

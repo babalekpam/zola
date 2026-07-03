@@ -28,7 +28,7 @@ export default function ProjectsPage() {
     <main className="mx-auto min-h-screen max-w-6xl px-6 py-12">
       <header className="mb-8 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
-          <Sparkles className="h-5 w-5 text-primary" /> Zola
+          <Sparkles className="h-5 w-5 text-primary" /> Loop
         </Link>
         <div className="flex items-center gap-4 text-sm">
           <Link href="/billing" className="text-muted-foreground hover:text-foreground">Billing</Link>
@@ -102,7 +102,7 @@ function EmptyState({ onNew, creating }: { onNew: () => void; creating: boolean 
     <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card p-12 text-center">
       <Plus className="mb-3 h-8 w-8 text-muted-foreground" />
       <h3 className="text-lg font-semibold">No projects yet</h3>
-      <p className="mt-1 max-w-sm text-sm text-muted-foreground">Create your first project and ask Zola to build something.</p>
+      <p className="mt-1 max-w-sm text-sm text-muted-foreground">Create your first project and ask Loop to build something.</p>
       <button onClick={onNew} disabled={creating} className="mt-4 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50">
         {creating ? "Creating…" : "Create first project"}
       </button>

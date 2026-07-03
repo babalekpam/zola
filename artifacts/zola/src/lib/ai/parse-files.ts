@@ -4,7 +4,7 @@ export interface ParsedFileBlock {
   content: string;
 }
 
-const BLOCK_RE = /```zola:file\s+path="([^"]+)"\s*\n([\s\S]*?)```/g;
+const BLOCK_RE = /```loop:file\s+path="([^"]+)"\s*\n([\s\S]*?)```/g;
 
 export function parseFileBlocks(text: string): ParsedFileBlock[] {
   const out: ParsedFileBlock[] = [];
