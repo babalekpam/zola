@@ -16,13 +16,16 @@ export default function SignupPage() {
     setLoading(true);
     setError(null);
     const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
     });
     setLoading(false);
     if (error) { setError(error.message); return; }
+    // If email confirmation is disabled in Supabase, signUp returns an active
+    // session immediately — send the user straight into the app.
+    if (data.session) { setLocation("/projects"); return; }
     setSent(true);
   }
 
