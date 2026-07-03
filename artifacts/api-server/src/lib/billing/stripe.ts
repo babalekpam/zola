@@ -7,7 +7,7 @@ export function getStripe(): Stripe {
   if (cached) return cached;
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) throw new Error("STRIPE_SECRET_KEY is not configured");
-  cached = new Stripe(key, { apiVersion: "2025-04-30.basil" });
+  cached = new Stripe(key, { apiVersion: "2026-06-24.dahlia" });
   return cached;
 }
 

@@ -18,7 +18,7 @@ function nvidia() {
   return createOpenAI({
     apiKey,
     baseURL: "https://integrate.api.nvidia.com/v1",
-    compatibility: "compatible",
+    name: "nvidia",
   });
 }
 
