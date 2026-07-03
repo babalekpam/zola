@@ -1,1 +1,2 @@
 - [Zola theme](zola-theme.md) — Cursor-inspired warm cream (oklch ~0.975 chroma 0.008 hue 80), light mode, dark primary buttons
+- [Supabase env prefix mismatch](supabase-env-migration.md) — after Next.js→Vite, secrets were NEXT_PUBLIC_* but code read VITE_*; widen envPrefix + fallback.
