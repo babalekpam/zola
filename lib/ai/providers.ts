@@ -4,7 +4,13 @@ import { openai, createOpenAI } from "@ai-sdk/openai";
 import { google } from "@ai-sdk/google";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import type { LanguageModel } from "ai";
-import { getModelById, type ModelDescriptor } from "./models";
+import {
+  getModelById,
+  PROVIDER_DEFAULT_MODEL,
+  PROVIDER_PRIORITY,
+  type ModelDescriptor,
+  type ProviderId,
+} from "./models";
 
 function openrouter() {
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -26,28 +32,17 @@ function nvidia() {
   });
 }
 
-function ensureProviderKey(provider: ModelDescriptor["provider"]) {
-  const key = {
-    anthropic: process.env.ANTHROPIC_API_KEY,
-    openai: process.env.OPENAI_API_KEY,
-    google: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-    openrouter: process.env.OPENROUTER_API_KEY,
-    nvidia: process.env.NVIDIA_API_KEY,
+function providerHasKey(provider: ProviderId): boolean {
+  return {
+    anthropic: !!process.env.ANTHROPIC_API_KEY,
+    openai: !!process.env.OPENAI_API_KEY,
+    google: !!process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+    openrouter: !!process.env.OPENROUTER_API_KEY,
+    nvidia: !!process.env.NVIDIA_API_KEY,
   }[provider];
-  if (!key) {
-    throw new Error(
-      `Missing API key for provider "${provider}". Set the matching env var.`,
-    );
-  }
 }
 
-export function resolveModel(modelId: string): LanguageModel {
-  const descriptor = getModelById(modelId);
-  if (!descriptor) {
-    throw new Error(`Unknown model: ${modelId}`);
-  }
-  ensureProviderKey(descriptor.provider);
-
+function instantiate(descriptor: ModelDescriptor): LanguageModel {
   switch (descriptor.provider) {
     case "anthropic":
       return anthropic(descriptor.modelId);
@@ -62,10 +57,57 @@ export function resolveModel(modelId: string): LanguageModel {
   }
 }
 
-export function listEnabledProviders(): Record<
-  ModelDescriptor["provider"],
-  boolean
-> {
+export function resolveModel(modelId: string): LanguageModel {
+  const descriptor = getModelById(modelId);
+  if (!descriptor) {
+    throw new Error(`Unknown model: ${modelId}`);
+  }
+  if (!providerHasKey(descriptor.provider)) {
+    throw new Error(
+      `Missing API key for provider "${descriptor.provider}". Set the matching env var.`,
+    );
+  }
+  return instantiate(descriptor);
+}
+
+/**
+ * Resolve the requested model, falling back to the first provider that has
+ * an API key configured (Anthropic first) when the requested provider's key
+ * is missing. Returns the model plus the id actually used, so the caller can
+ * surface the substitution to the user.
+ */
+export function resolveModelWithFallback(modelId: string): {
+  model: LanguageModel;
+  usedModelId: string;
+  fellBack: boolean;
+} {
+  const requested = getModelById(modelId);
+  if (requested && providerHasKey(requested.provider)) {
+    return {
+      model: instantiate(requested),
+      usedModelId: requested.id,
+      fellBack: false,
+    };
+  }
+
+  for (const provider of PROVIDER_PRIORITY) {
+    if (!providerHasKey(provider)) continue;
+    const fallbackId = PROVIDER_DEFAULT_MODEL[provider];
+    const descriptor = getModelById(fallbackId);
+    if (!descriptor) continue;
+    return {
+      model: instantiate(descriptor),
+      usedModelId: descriptor.id,
+      fellBack: true,
+    };
+  }
+
+  throw new Error(
+    "No AI provider is configured. Set at least one API key (ANTHROPIC_API_KEY recommended).",
+  );
+}
+
+export function listEnabledProviders(): Record<ProviderId, boolean> {
   return {
     anthropic: !!process.env.ANTHROPIC_API_KEY,
     openai: !!process.env.OPENAI_API_KEY,

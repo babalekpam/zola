@@ -138,7 +138,26 @@ export const MODELS: ModelDescriptor[] = [
   },
 ];
 
-export const DEFAULT_MODEL_ID = "nvidia-qwen-coder-32b";
+// Claude is Loop's primary model; others are fallbacks per provider.
+export const DEFAULT_MODEL_ID = "claude-sonnet-4-6";
+
+// First model to try for each provider when falling back.
+export const PROVIDER_DEFAULT_MODEL: Record<ProviderId, string> = {
+  anthropic: "claude-sonnet-4-6",
+  openai: "gpt-5-mini",
+  google: "gemini-2.5-flash",
+  openrouter: "kimi-k2",
+  nvidia: "nvidia-qwen-coder-32b",
+};
+
+// Fallback order when the requested model's provider has no API key.
+export const PROVIDER_PRIORITY: ProviderId[] = [
+  "anthropic",
+  "openai",
+  "google",
+  "nvidia",
+  "openrouter",
+];
 
 export function getModelById(id: string): ModelDescriptor | undefined {
   return MODELS.find((m) => m.id === id);

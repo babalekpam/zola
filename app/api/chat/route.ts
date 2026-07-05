@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 import { streamText, type CoreMessage } from "ai";
 import { NextResponse } from "next/server";
-import { resolveModel } from "@/lib/ai/providers";
+import { resolveModelWithFallback } from "@/lib/ai/providers";
 import { CODING_SYSTEM_PROMPT } from "@/lib/ai/system-prompt";
 import { DEFAULT_MODEL_ID } from "@/lib/ai/models";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -36,8 +36,9 @@ export async function POST(req: Request) {
       projectFiles?: Record<string, string>;
       projectId?: string;
     };
-    const modelId = body.modelId ?? DEFAULT_MODEL_ID;
-    const model = resolveModel(modelId);
+    const requestedModelId = body.modelId ?? DEFAULT_MODEL_ID;
+    const { model, usedModelId } = resolveModelWithFallback(requestedModelId);
+    const modelId = usedModelId;
 
     const projectContext = body.projectFiles
       ? `\n\nCurrent project files:\n${Object.entries(body.projectFiles)

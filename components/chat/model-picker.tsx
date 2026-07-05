@@ -42,7 +42,7 @@ export function ModelPicker({ value, onChange }: Props) {
           onMouseLeave={() => setOpen(false)}
         >
           {(
-            ["nvidia", "anthropic", "openai", "google", "openrouter"] as ProviderId[]
+            ["anthropic", "openai", "google", "nvidia", "openrouter"] as ProviderId[]
           ).map(
             (provider) => {
               const models = MODELS.filter((m) => m.provider === provider);
