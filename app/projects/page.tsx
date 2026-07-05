@@ -5,6 +5,7 @@ import { Plus, Sparkles } from "lucide-react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { NewProjectButton } from "@/components/projects/new-project-button";
 import { ProjectCard } from "@/components/projects/project-card";
+import { PendingPromptHandler } from "@/components/projects/pending-prompt";
 import type { Project } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,7 @@ export default async function ProjectsPage() {
 
   return (
     <main className="mx-auto min-h-screen max-w-6xl px-6 py-12">
+      <PendingPromptHandler />
       <header className="mb-8 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2 text-lg font-semibold">

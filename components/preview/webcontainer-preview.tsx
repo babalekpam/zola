@@ -36,15 +36,18 @@ function filesToTree(files: Record<string, string>): FileSystemTree {
 
 interface Props {
   files: Record<string, string>;
+  /** Increment to request an automatic boot (Replit-style auto-run). */
+  runSignal?: number;
 }
 
-export function WebContainerPreview({ files }: Props) {
+export function WebContainerPreview({ files, runSignal = 0 }: Props) {
   const [url, setUrl] = useState<string | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const [running, setRunning] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
   const containerRef = useRef<WebContainer | null>(null);
   const devProcessRef = useRef<{ kill: () => void } | null>(null);
+  const lastRunSignalRef = useRef(0);
 
   const appendLog = useCallback((line: string) => {
     setLogs((prev) => [...prev.slice(-400), line]);
@@ -97,6 +100,14 @@ export function WebContainerPreview({ files }: Props) {
     setUrl(null);
     setRunning(false);
   }, []);
+
+  // Auto-run when the agent applies files. If the dev server is already up,
+  // the file-sync effect below hot-reloads it, so only boot when stopped.
+  useEffect(() => {
+    if (runSignal === lastRunSignalRef.current) return;
+    lastRunSignalRef.current = runSignal;
+    if (!running) void run();
+  }, [runSignal, running, run]);
 
   useEffect(() => {
     if (!containerRef.current || !running) return;
@@ -161,8 +172,22 @@ export function WebContainerPreview({ files }: Props) {
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-            {running ? "Booting WebContainer…" : "Press Run to launch the app."}
+          <div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
+            {running ? (
+              <>
+                <span className="animate-pulse">Setting up your app…</span>
+                <span className="text-xs">
+                  installing packages and starting the dev server
+                </span>
+              </>
+            ) : (
+              <>
+                <span>Your app will appear here.</span>
+                <span className="text-xs">
+                  Ask the agent to build something, or press Run.
+                </span>
+              </>
+            )}
           </div>
         )}
         {showLogs ? (
