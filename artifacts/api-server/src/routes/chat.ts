@@ -2,7 +2,7 @@
 import { Router } from "express";
 import { streamText, type CoreMessage } from "ai";
 import { resolveModel } from "../lib/ai/providers";
-import { CODING_SYSTEM_PROMPT } from "../lib/ai/system-prompt";
+import { CODING_SYSTEM_PROMPT, PLANNING_SYSTEM_PROMPT } from "../lib/ai/system-prompt";
 import { DEFAULT_MODEL_ID } from "../lib/ai/models";
 import { createSupabaseServerClient } from "../lib/supabase";
 
@@ -33,6 +33,7 @@ router.post("/chat", async (req, res) => {
       modelId?: string;
       projectFiles?: Record<string, string>;
       projectId?: string;
+      planMode?: boolean;
     };
     const modelId = body.modelId ?? DEFAULT_MODEL_ID;
     const model = resolveModel(modelId);
@@ -57,9 +58,11 @@ router.post("/chat", async (req, res) => {
       }
     }
 
+    const basePrompt = body.planMode ? PLANNING_SYSTEM_PROMPT : CODING_SYSTEM_PROMPT;
+
     const result = streamText({
       model,
-      system: CODING_SYSTEM_PROMPT + projectContext,
+      system: basePrompt + projectContext,
       messages: body.messages,
       temperature: 0.4,
       async onFinish({ text }) {
