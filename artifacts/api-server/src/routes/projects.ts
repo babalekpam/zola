@@ -6,16 +6,43 @@ import { fetchRepoFiles } from "../lib/github";
 
 const router = Router();
 
+// Resolve the workspace a new project should live in: the explicit org_id when
+// the caller is a member of it, otherwise their personal workspace. Returns
+// null only when the user has no workspace at all (should not happen post-migration).
+async function resolveOrgId(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  userId: string,
+  requested?: string | null,
+): Promise<string | null> {
+  if (requested) {
+    const { data } = await supabase
+      .from("organization_members")
+      .select("org_id")
+      .eq("org_id", requested)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (data) return requested;
+  }
+  const { data: personal } = await supabase
+    .from("organizations")
+    .select("id")
+    .eq("owner_id", userId)
+    .eq("personal", true)
+    .maybeSingle();
+  return personal?.id ?? null;
+}
+
 router.post("/projects/import", async (req, res) => {
   const supabase = createSupabaseServerClient(req, res);
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) { res.status(401).json({ error: "Unauthorized" }); return; }
 
-  const { repoUrl } = req.body as { repoUrl?: string };
+  const { repoUrl, org_id } = req.body as { repoUrl?: string; org_id?: string };
   if (!repoUrl || typeof repoUrl !== "string") {
     res.status(400).json({ error: "repoUrl is required" });
     return;
   }
+  const orgId = await resolveOrgId(supabase, userData.user.id, org_id);
 
   let imported: { name: string; files: { path: string; content: string }[] };
   try {
@@ -31,6 +58,7 @@ router.post("/projects/import", async (req, res) => {
       name: imported.name,
       description: `Imported from ${repoUrl.trim()}`,
       owner_id: userData.user.id,
+      org_id: orgId,
       default_model: DEFAULT_MODEL_ID,
     })
     .select("*")
@@ -67,10 +95,14 @@ router.get("/projects", async (req, res) => {
   const { data: user } = await supabase.auth.getUser();
   if (!user.user) { res.status(401).json({ error: "Unauthorized" }); return; }
 
-  const { data, error } = await supabase
+  const orgId = req.query.org as string | undefined;
+  let query = supabase
     .from("projects")
     .select("*")
     .order("updated_at", { ascending: false });
+  if (orgId) query = query.eq("org_id", orgId);
+
+  const { data, error } = await query;
 
   if (error) { res.status(500).json({ error: error.message }); return; }
   res.json({ projects: data });
@@ -81,8 +113,9 @@ router.post("/projects", async (req, res) => {
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) { res.status(401).json({ error: "Unauthorized" }); return; }
 
-  const body = req.body as { name?: string; description?: string };
+  const body = req.body as { name?: string; description?: string; org_id?: string };
   const name = (body.name ?? "").trim() || "Untitled project";
+  const orgId = await resolveOrgId(supabase, userData.user.id, body.org_id);
 
   const { data: project, error } = await supabase
     .from("projects")
@@ -90,6 +123,7 @@ router.post("/projects", async (req, res) => {
       name,
       description: body.description ?? null,
       owner_id: userData.user.id,
+      org_id: orgId,
       default_model: DEFAULT_MODEL_ID,
     })
     .select("*")

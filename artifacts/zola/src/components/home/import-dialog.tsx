@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useImportProject } from "@/hooks/use-projects";
+import { useActiveOrg } from "@/hooks/use-active-org";
 
 interface Props {
   open: boolean;
@@ -23,13 +24,17 @@ export function ImportDialog({ open, onOpenChange }: Props) {
   const [url, setUrl] = useState("");
   const [, setLocation] = useLocation();
   const importProject = useImportProject();
+  const { activeOrgId } = useActiveOrg();
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const repoUrl = url.trim();
     if (!repoUrl) return;
     try {
-      const { project, fileCount } = await importProject.mutateAsync(repoUrl);
+      const { project, fileCount } = await importProject.mutateAsync({
+        repoUrl,
+        orgId: activeOrgId ?? undefined,
+      });
       toast.success(`Imported ${fileCount} files into "${project.name}"`);
       setUrl("");
       onOpenChange(false);

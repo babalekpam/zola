@@ -2,13 +2,15 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { useActiveOrg } from "@/hooks/use-active-org";
 import { useProjects, useCreateProject, useDeleteProject } from "@/hooks/use-projects";
 import { HomeDashboard } from "@/components/home/home-dashboard";
 
 export default function ProjectsPage() {
   const { user, signOut } = useAuth();
   const [, setLocation] = useLocation();
-  const { data: projects, isLoading } = useProjects();
+  const { activeOrgId } = useActiveOrg();
+  const { data: projects, isLoading } = useProjects(activeOrgId ?? undefined);
   const createProject = useCreateProject();
   const deleteProject = useDeleteProject();
   const [creating, setCreating] = useState(false);
@@ -25,7 +27,10 @@ export default function ProjectsPage() {
     setCreating(true);
     const name = prompt?.trim() ? prompt.trim().slice(0, 60) : "Untitled project";
     try {
-      const project = await createProject.mutateAsync({ name });
+      const project = await createProject.mutateAsync({
+        name,
+        org_id: activeOrgId ?? undefined,
+      });
       setLocation(`/projects/${project.id}`);
     } finally {
       setCreating(false);

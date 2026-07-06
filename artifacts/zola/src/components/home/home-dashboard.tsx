@@ -15,11 +15,9 @@ import {
   GraduationCap,
   BookOpen,
   Gift,
-  Sparkles,
   ArrowUp,
   Mic,
   Paperclip,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   RefreshCw,
@@ -34,8 +32,8 @@ import { formatRelativeTime } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import type { Project } from "@/lib/types";
 import { ImportDialog } from "./import-dialog";
-import { InviteDialog } from "./invite-dialog";
 import { ReferEarnDialog } from "./refer-earn-dialog";
+import { WorkspaceSwitcher } from "./workspace-switcher";
 
 interface Props {
   userName: string;
@@ -87,7 +85,6 @@ export function HomeDashboard({
 }: Props) {
   const [prompt, setPrompt] = useState("");
   const [importOpen, setImportOpen] = useState(false);
-  const [inviteOpen, setInviteOpen] = useState(false);
   const [referOpen, setReferOpen] = useState(false);
 
   function submitPrompt() {
@@ -100,16 +97,7 @@ export function HomeDashboard({
       {/* Sidebar */}
       <aside className="flex w-60 shrink-0 flex-col border-r border-border bg-card/40">
         <div className="flex items-center justify-between px-3 py-3">
-          <button
-            type="button"
-            className="flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1 hover:bg-accent"
-          >
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <Sparkles className="h-3.5 w-3.5" />
-            </span>
-            <span className="truncate text-sm font-medium">{userName}'s ...</span>
-            <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-          </button>
+          <WorkspaceSwitcher />
           <button
             type="button"
             className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -135,15 +123,14 @@ export function HomeDashboard({
           >
             <Download className="h-4 w-4" /> Import code or design
           </button>
-          <button
-            type="button"
-            onClick={() => setInviteOpen(true)}
+          <Link
+            href="/organization"
             className="flex w-full items-center justify-between rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
           >
             <span className="flex items-center gap-2">
               <UserPlus className="h-4 w-4" /> Invite
             </span>
-          </button>
+          </Link>
         </div>
 
         <nav className="mt-3 flex-1 space-y-0.5 overflow-y-auto px-3">
@@ -361,12 +348,6 @@ export function HomeDashboard({
       </main>
 
       <ImportDialog open={importOpen} onOpenChange={setImportOpen} />
-      <InviteDialog
-        open={inviteOpen}
-        onOpenChange={setInviteOpen}
-        projects={projects}
-        currentUserId={userId}
-      />
       <ReferEarnDialog open={referOpen} onOpenChange={setReferOpen} />
     </div>
   );

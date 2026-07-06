@@ -2,6 +2,7 @@
 export interface Project {
   id: string;
   owner_id: string;
+  org_id: string | null;
   name: string;
   description: string | null;
   default_model: string;

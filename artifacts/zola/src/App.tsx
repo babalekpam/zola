@@ -3,6 +3,7 @@ import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/hooks/use-auth";
+import { ActiveOrgProvider } from "@/hooks/use-active-org";
 import LandingPage from "@/pages/landing";
 import LoginPage from "@/pages/login";
 import SignupPage from "@/pages/signup";
@@ -11,6 +12,8 @@ import ResetPasswordPage from "@/pages/reset-password";
 import AuthCallbackPage from "@/pages/auth-callback";
 import ProjectsPage from "@/pages/projects";
 import InvitePage from "@/pages/invite";
+import JoinWorkspacePage from "@/pages/join";
+import OrganizationPage from "@/pages/organization";
 import WorkspacePage from "@/pages/workspace";
 import BillingPage from "@/pages/billing";
 import AccountPage from "@/pages/account";
@@ -36,7 +39,9 @@ function AppRouter() {
       <Route path="/reset-password" component={ResetPasswordPage} />
       <Route path="/auth/callback" component={AuthCallbackPage} />
       <Route path="/projects" component={ProjectsPage} />
+      <Route path="/organization" component={OrganizationPage} />
       <Route path="/invite/:token" component={InvitePage} />
+      <Route path="/join/:token" component={JoinWorkspacePage} />
       <Route path="/projects/:id" component={WorkspacePage} />
       <Route path="/billing" component={BillingPage} />
       <Route path="/account" component={AccountPage} />
@@ -62,10 +67,12 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <AppRouter />
-        </WouterRouter>
-        <Toaster position="bottom-right" theme="dark" richColors />
+        <ActiveOrgProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <AppRouter />
+          </WouterRouter>
+          <Toaster position="bottom-right" theme="dark" richColors />
+        </ActiveOrgProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

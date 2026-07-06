@@ -17,13 +17,14 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export function useProjects() {
+export function useProjects(orgId?: string | null) {
   return useQuery({
-    queryKey: ["projects"],
+    queryKey: ["projects", orgId ?? null],
     queryFn: () =>
-      apiFetch<{ projects: Project[] }>("/api/projects").then(
-        (d) => d.projects,
-      ),
+      apiFetch<{ projects: Project[] }>(
+        orgId ? `/api/projects?org=${encodeURIComponent(orgId)}` : "/api/projects",
+      ).then((d) => d.projects),
+    enabled: orgId !== undefined ? !!orgId : true,
   });
 }
 
@@ -41,7 +42,7 @@ export function useProject(id: string | undefined) {
 export function useCreateProject() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { name: string; description?: string }) =>
+    mutationFn: (data: { name: string; description?: string; org_id?: string }) =>
       apiFetch<{ project: Project }>("/api/projects", {
         method: "POST",
         body: JSON.stringify(data),
@@ -62,10 +63,10 @@ export function useDeleteProject() {
 export function useImportProject() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (repoUrl: string) =>
+    mutationFn: ({ repoUrl, orgId }: { repoUrl: string; orgId?: string }) =>
       apiFetch<{ project: Project; fileCount: number }>(
         "/api/projects/import",
-        { method: "POST", body: JSON.stringify({ repoUrl }) },
+        { method: "POST", body: JSON.stringify({ repoUrl, org_id: orgId }) },
       ),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["projects"] }),
   });

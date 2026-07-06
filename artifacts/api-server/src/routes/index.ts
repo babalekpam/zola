@@ -6,6 +6,7 @@ import accountRouter from "./account";
 import stripeRouter from "./stripe";
 import collabRouter from "./collab";
 import referralRouter from "./referral";
+import orgsRouter from "./orgs";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(accountRouter);
 router.use(stripeRouter);
 router.use(collabRouter);
 router.use(referralRouter);
+router.use(orgsRouter);
 
 export default router;
