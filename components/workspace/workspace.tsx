@@ -162,9 +162,9 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
         </Link>
       </div>
 
-      <div className="hidden h-screen w-screen md:grid grid-rows-[48px_1fr] grid-cols-[420px_1fr]">
-        {/* Header spans both columns */}
-        <header className="col-span-2 flex items-center justify-between border-b border-border bg-background px-4">
+      {/* Replit-style chrome: navy canvas, floating rounded panes with gutters */}
+      <div className="hidden h-screen w-screen flex-col gap-1.5 bg-background p-1.5 md:flex">
+        <header className="flex h-11 shrink-0 items-center justify-between rounded-lg border border-border bg-card px-3">
           <div className="flex items-center gap-3">
             <Link
               href="/projects"
@@ -189,76 +189,78 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
           </div>
         </header>
 
-        {/* Left: agent chat */}
-        <section className="min-h-0 border-r border-border">
-          <ChatPanel
-            projectId={project.id}
-            files={files}
-            initialMessages={initialMessages}
-            onApplyFiles={applyFiles}
-          />
-        </section>
+        <div className="flex min-h-0 flex-1 gap-1.5">
+          {/* Left: agent chat pane */}
+          <section className="flex w-[420px] shrink-0 flex-col overflow-hidden rounded-lg border border-border bg-card">
+            <ChatPanel
+              projectId={project.id}
+              files={files}
+              initialMessages={initialMessages}
+              onApplyFiles={applyFiles}
+            />
+          </section>
 
-        {/* Right: App / Code tabs, preview-first like Replit */}
-        <section className="grid min-h-0 grid-rows-[40px_1fr]">
-          <div className="flex items-center justify-between border-b border-border bg-background px-2">
-            <div className="flex items-center gap-1">
-              <TabButton
-                active={tab === "app"}
-                onClick={() => setTab("app")}
-                icon={<Play className="h-3.5 w-3.5" />}
-                label="App"
-              />
-              <TabButton
-                active={tab === "code"}
-                onClick={() => setTab("code")}
-                icon={<Code2 className="h-3.5 w-3.5" />}
-                label="Code"
-              />
-            </div>
-            <span className="pr-2 text-[10px] uppercase tracking-wider text-muted-foreground">
-              Argilette Lab
-            </span>
-          </div>
-
-          <div className="min-h-0">
-            {/* Keep the preview mounted even on the Code tab so the dev
-                server keeps running; just hide it. */}
-            <div className={cn("h-full", tab === "app" ? "block" : "hidden")}>
-              <WebContainerPreview files={files} runSignal={runSignal} />
-            </div>
-            <div
-              className={cn(
-                "h-full grid-cols-[240px_1fr]",
-                tab === "code" ? "grid" : "hidden",
-              )}
-            >
-              <div className="overflow-hidden border-r border-border bg-card">
-                <FileTree
-                  files={files}
-                  activePath={activePath}
-                  onSelect={onSelect}
-                  onCreate={createFile}
-                  onDelete={(p) => void deleteFile(p)}
-                  onRename={(f, t) => void renameFile(f, t)}
+          {/* Right: App / Code pane, preview-first like Replit */}
+          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card">
+            <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-2">
+              <div className="flex items-center gap-1">
+                <TabButton
+                  active={tab === "app"}
+                  onClick={() => setTab("app")}
+                  icon={<Play className="h-3.5 w-3.5" />}
+                  label="App"
+                />
+                <TabButton
+                  active={tab === "code"}
+                  onClick={() => setTab("code")}
+                  icon={<Code2 className="h-3.5 w-3.5" />}
+                  label="Code"
                 />
               </div>
-              <div className="h-full">
-                {activePath ? (
-                  <CodeEditor
-                    path={activePath}
-                    value={files[activePath] ?? ""}
-                    onChange={(v) => updateFile(activePath, v)}
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                    Select a file to edit
-                  </div>
+              <span className="pr-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+                Argilette Lab
+              </span>
+            </div>
+
+            <div className="min-h-0 flex-1">
+              {/* Keep the preview mounted even on the Code tab so the dev
+                  server keeps running; just hide it. */}
+              <div className={cn("h-full", tab === "app" ? "block" : "hidden")}>
+                <WebContainerPreview files={files} runSignal={runSignal} />
+              </div>
+              <div
+                className={cn(
+                  "h-full grid-cols-[240px_1fr]",
+                  tab === "code" ? "grid" : "hidden",
                 )}
+              >
+                <div className="overflow-hidden border-r border-border">
+                  <FileTree
+                    files={files}
+                    activePath={activePath}
+                    onSelect={onSelect}
+                    onCreate={createFile}
+                    onDelete={(p) => void deleteFile(p)}
+                    onRename={(f, t) => void renameFile(f, t)}
+                  />
+                </div>
+                <div className="h-full">
+                  {activePath ? (
+                    <CodeEditor
+                      path={activePath}
+                      value={files[activePath] ?? ""}
+                      onChange={(v) => updateFile(activePath, v)}
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                      Select a file to edit
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </div>
       </div>
     </>
   );

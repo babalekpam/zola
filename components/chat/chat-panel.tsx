@@ -99,7 +99,7 @@ export function ChatPanel({
   const busy = status === "submitted" || status === "streaming";
 
   return (
-    <div className="flex h-full flex-col bg-background">
+    <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
         <div className="flex items-center gap-2 text-sm font-medium">
           <Sparkles className="h-4 w-4 text-primary" />

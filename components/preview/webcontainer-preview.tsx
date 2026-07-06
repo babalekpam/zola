@@ -133,7 +133,7 @@ export function WebContainerPreview({ files, runSignal = 0 }: Props) {
   }, [files, running]);
 
   return (
-    <div className="flex h-full flex-col bg-background">
+    <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-border px-3 py-2">
         <div className="text-xs font-medium text-muted-foreground">
           Preview
