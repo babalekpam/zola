@@ -29,7 +29,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm run dev -- -H 0.0.0.0 -p ${PORT:-3000}"
+args = "npm run dev -- -p ${PORT:-3000}"
 waitForPort = 3000
 
 [agent]
