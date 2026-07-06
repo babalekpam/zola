@@ -1,8 +1,21 @@
 // Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 import { useEffect, useRef, useState } from "react";
-import { WebContainer } from "@webcontainer/api";
+import { WebContainer, configureAPIKey } from "@webcontainer/api";
 import { ExternalLink, RefreshCw, Terminal as TerminalIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// StackBlitz WebContainer boots for free on localhost, but custom production
+// domains require a registered origin + API key. If one is configured we apply
+// it before boot; otherwise boot will fail on non-localhost origins.
+const WC_API_KEY = import.meta.env.VITE_WEBCONTAINER_API_KEY as
+  | string
+  | undefined;
+let wcKeyConfigured = false;
+
+function isLocalHost() {
+  if (typeof window === "undefined") return false;
+  return /^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname);
+}
 
 interface Props {
   files: Record<string, string>;
@@ -54,6 +67,15 @@ export function WebContainerPreview({ files }: Props) {
         if (!self.crossOriginIsolated) {
           throw new Error(
             "This browser context is not cross-origin isolated, so the in-browser Node preview can't start. Open the app in a top-level browser tab (or use a supported browser) and try again.",
+          );
+        }
+        if (WC_API_KEY && !wcKeyConfigured) {
+          configureAPIKey(WC_API_KEY);
+          wcKeyConfigured = true;
+        }
+        if (!WC_API_KEY && !isLocalHost()) {
+          throw new Error(
+            "The in-browser Node preview (StackBlitz WebContainer) only runs for free on localhost. On this published domain it needs a WebContainer API key with this origin registered at https://webcontainer.io — add it as VITE_WEBCONTAINER_API_KEY and republish. (It still works in the Replit dev preview.)",
           );
         }
         wcInstance = await WebContainer.boot();
