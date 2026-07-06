@@ -36,6 +36,7 @@ export function WebContainerPreview({ files }: Props) {
   const [url, setUrl] = useState<string | null>(null);
   const [logs, setLogs] = useState<LogLine[]>([]);
   const [showLogs, setShowLogs] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const logIdRef = useRef(0);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const filesRef = useRef(files);
@@ -113,6 +114,7 @@ export function WebContainerPreview({ files }: Props) {
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         addLog(`Error: ${msg}`);
+        setErrorMsg(msg);
         setStatus("error");
       } finally {
         wcBooting = false;
@@ -188,6 +190,20 @@ export function WebContainerPreview({ files }: Props) {
         <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center px-6">
           <StatusIcon status={status} />
           <p className="text-sm text-muted-foreground">{STATUS_TEXT[status]}</p>
+          {status === "error" && errorMsg && (
+            <p className="max-w-md text-xs leading-relaxed text-destructive/90">
+              {errorMsg}
+            </p>
+          )}
+          {status === "error" && (
+            <button
+              type="button"
+              onClick={() => setShowLogs(true)}
+              className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+            >
+              View full logs
+            </button>
+          )}
         </div>
       )}
     </div>
