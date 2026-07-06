@@ -28,9 +28,11 @@ import {
   Trash2,
   FolderOpen,
 } from "lucide-react";
+import { toast } from "sonner";
 import { formatRelativeTime } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import type { Project } from "@/lib/types";
+import { readAttachment } from "@/lib/read-attachment";
 import { useSamples } from "@/hooks/use-projects";
 import { ImportDialog } from "./import-dialog";
 import { ReferEarnDialog } from "./refer-earn-dialog";
@@ -96,39 +98,40 @@ export function HomeDashboard({
   const [attachments, setAttachments] = useState<
     { path: string; content: string }[]
   >([]);
+  const [reading, setReading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { data: samples } = useSamples();
 
   async function handleFiles(list: FileList | null) {
     if (!list || list.length === 0) return;
-    const read = await Promise.all(
-      Array.from(list).map(
-        (file) =>
-          new Promise<{ path: string; content: string } | null>((resolve) => {
-            if (file.size > 200_000) {
-              resolve(null);
-              return;
-            }
-            const reader = new FileReader();
-            reader.onload = () =>
-              resolve({ path: file.name, content: String(reader.result ?? "") });
-            reader.onerror = () => resolve(null);
-            reader.readAsText(file);
-          }),
-      ),
-    );
-    const valid = read.filter(
-      (f): f is { path: string; content: string } => f !== null,
-    );
-    setAttachments((prev) => {
-      const merged = [...prev];
-      for (const f of valid) {
-        const i = merged.findIndex((m) => m.path === f.path);
-        if (i >= 0) merged[i] = f;
-        else merged.push(f);
+    setReading(true);
+    try {
+      const results = await Promise.all(
+        Array.from(list).map((file) => readAttachment(file)),
+      );
+      const valid = results.flatMap((r) => (r.ok ? [r.attachment] : []));
+      for (const r of results) {
+        if (!r.ok) toast.error(`Couldn't attach ${r.name}`, { description: r.error });
       }
-      return merged;
-    });
+      if (valid.length) {
+        setAttachments((prev) => {
+          const merged = [...prev];
+          for (const f of valid) {
+            const i = merged.findIndex((m) => m.path === f.path);
+            if (i >= 0) merged[i] = f;
+            else merged.push(f);
+          }
+          return merged;
+        });
+        toast.success(
+          valid.length === 1
+            ? `Attached ${valid[0].path}`
+            : `Attached ${valid.length} files`,
+        );
+      }
+    } finally {
+      setReading(false);
+    }
   }
 
   function submitPrompt() {
@@ -280,7 +283,7 @@ export function HomeDashboard({
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept=".txt,.md,.markdown,.json,.csv,.tsv,.js,.jsx,.ts,.tsx,.html,.css,.scss,.py,.rb,.go,.rs,.java,.php,.yml,.yaml,.xml,.svg,.env,.sql,.sh,text/*"
+                accept=".pdf,.docx,.txt,.md,.markdown,.json,.csv,.tsv,.js,.jsx,.ts,.tsx,.html,.css,.scss,.py,.rb,.go,.rs,.java,.php,.yml,.yaml,.toml,.xml,.svg,.env,.sql,.sh,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/*"
                 className="hidden"
                 onChange={(e) => {
                   handleFiles(e.target.files);
@@ -290,11 +293,16 @@ export function HomeDashboard({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                disabled={reading}
+                className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50"
                 aria-label="Attach"
-                title="Attach reference files"
+                title="Attach reference files (PDF, Word, text, code)"
               >
-                <Paperclip className="h-4 w-4" />
+                {reading ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Paperclip className="h-4 w-4" />
+                )}
               </button>
               <div className="flex items-center gap-1.5">
                 <button

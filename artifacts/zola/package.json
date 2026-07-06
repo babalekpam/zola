@@ -82,5 +82,9 @@
     "wouter": "^3.3.5",
     "zod": "catalog:",
     "zustand": "^5.0.14"
+  },
+  "dependencies": {
+    "mammoth": "^1.12.0",
+    "pdfjs-dist": "^6.1.200"
   }
 }
