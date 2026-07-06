@@ -22,7 +22,13 @@ export default function ProjectsPage() {
     user.email?.split("@")[0] ??
     "there";
 
-  async function handleCreate(prompt?: string) {
+  async function handleCreate(
+    prompt?: string,
+    opts?: {
+      template?: string;
+      attachments?: { path: string; content: string }[];
+    },
+  ) {
     if (creating) return;
     setCreating(true);
     const name = prompt?.trim() ? prompt.trim().slice(0, 60) : "Untitled project";
@@ -30,6 +36,8 @@ export default function ProjectsPage() {
       const project = await createProject.mutateAsync({
         name,
         org_id: activeOrgId ?? undefined,
+        template: opts?.template,
+        attachments: opts?.attachments,
       });
       setLocation(`/projects/${project.id}`);
     } finally {

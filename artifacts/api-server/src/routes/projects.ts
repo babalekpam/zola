@@ -113,15 +113,24 @@ router.post("/projects", async (req, res) => {
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) { res.status(401).json({ error: "Unauthorized" }); return; }
 
-  const body = req.body as { name?: string; description?: string; org_id?: string };
-  const name = (body.name ?? "").trim() || "Untitled project";
+  const body = req.body as {
+    name?: string;
+    description?: string;
+    org_id?: string;
+    template?: string;
+    attachments?: { path?: string; content?: string }[];
+  };
+  const sample = body.template
+    ? SAMPLE_PROJECTS.find((s) => s.id === body.template)
+    : undefined;
+  const name = (body.name ?? "").trim() || sample?.name || "Untitled project";
   const orgId = await resolveOrgId(supabase, userData.user.id, body.org_id);
 
   const { data: project, error } = await supabase
     .from("projects")
     .insert({
       name,
-      description: body.description ?? null,
+      description: body.description ?? sample?.description ?? null,
       owner_id: userData.user.id,
       org_id: orgId,
       default_model: DEFAULT_MODEL_ID,
@@ -134,16 +143,51 @@ router.post("/projects", async (req, res) => {
     return;
   }
 
-  const starter = starterFiles();
-  await supabase.from("project_files").insert(
-    Object.entries(starter).map(([path, content]) => ({
-      project_id: project.id,
-      path,
-      content,
-    })),
-  );
+  // Collect files by path so duplicate inputs (e.g. two attachments with the
+  // same name) can't poison the upsert batch — last write wins.
+  const byPath = new Map<string, string>();
+  const base = sample ? sample.files() : starterFiles();
+  for (const [path, content] of Object.entries(base)) byPath.set(path, content);
+
+  // Attach user-provided reference files under attachments/ so the AI (and the
+  // file tree) can use them. Text is stored verbatim; oversized files are skipped.
+  if (Array.isArray(body.attachments)) {
+    for (const a of body.attachments) {
+      const fileName = (a?.path ?? "").trim().replace(/^\/+/, "");
+      if (!fileName || typeof a?.content !== "string") continue;
+      if (a.content.length > 200_000) continue;
+      byPath.set(`attachments/${fileName}`, a.content);
+    }
+  }
+
+  const rows = Array.from(byPath, ([path, content]) => ({
+    project_id: project.id as string,
+    path,
+    content,
+  }));
+
+  const { error: filesErr } = await supabase
+    .from("project_files")
+    .upsert(rows, { onConflict: "project_id,path" });
+
+  if (filesErr) {
+    // Don't leave a project shell with no files behind (files cascade on delete).
+    await supabase.from("projects").delete().eq("id", project.id);
+    res.status(500).json({ error: filesErr.message });
+    return;
+  }
 
   res.json({ project });
+});
+
+router.get("/projects/samples", (_req, res) => {
+  res.json({
+    samples: SAMPLE_PROJECTS.map(({ id, name, description }) => ({
+      id,
+      name,
+      description,
+    })),
+  });
 });
 
 router.get("/projects/:id", async (req, res) => {
@@ -233,7 +277,9 @@ router.delete("/projects/:id/files", async (req, res) => {
   res.json({ ok: true });
 });
 
-function starterFiles(): Record<string, string> {
+// Shared scaffold (everything except src/App.tsx) reused by the blank starter
+// and every clonable sample so they all run with just react + vite.
+function baseFiles(): Record<string, string> {
   return {
     "package.json": JSON.stringify(
       {
@@ -274,15 +320,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   </React.StrictMode>,
 );
 `,
-    "src/App.tsx": `export default function App() {
-  return (
-    <main style={{ fontFamily: "system-ui", padding: 48, textAlign: "center" }}>
-      <h1>Hello from Zola</h1>
-      <p>Ask the AI on the left to build something.</p>
-    </main>
-  );
-}
-`,
     "vite.config.ts": `import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
@@ -308,5 +345,188 @@ export default defineConfig({ plugins: [react()] });
     ),
   };
 }
+
+function starterFiles(): Record<string, string> {
+  return {
+    ...baseFiles(),
+    "src/App.tsx": `export default function App() {
+  return (
+    <main style={{ fontFamily: "system-ui", padding: 48, textAlign: "center" }}>
+      <h1>Hello from Zola</h1>
+      <p>Ask the AI on the left to build something.</p>
+    </main>
+  );
+}
+`,
+  };
+}
+
+interface Sample {
+  id: string;
+  name: string;
+  description: string;
+  files: () => Record<string, string>;
+}
+
+const SAMPLE_PROJECTS: Sample[] = [
+  {
+    id: "todo",
+    name: "Todo App",
+    description: "A clean React to-do list with add, complete, and delete.",
+    files: () => ({
+      ...baseFiles(),
+      "src/App.tsx": `import { useState } from "react";
+
+interface Todo {
+  id: number;
+  text: string;
+  done: boolean;
+}
+
+export default function App() {
+  const [todos, setTodos] = useState<Todo[]>([
+    { id: 1, text: "Try editing this app with the AI", done: false },
+  ]);
+  const [text, setText] = useState("");
+
+  function add() {
+    const value = text.trim();
+    if (!value) return;
+    setTodos((t) => [...t, { id: Date.now(), text: value, done: false }]);
+    setText("");
+  }
+
+  return (
+    <main style={{ fontFamily: "system-ui", maxWidth: 480, margin: "48px auto", padding: 24 }}>
+      <h1 style={{ marginBottom: 16 }}>Todo</h1>
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && add()}
+          placeholder="Add a task…"
+          style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: "1px solid #ccc" }}
+        />
+        <button onClick={add} style={{ padding: "8px 16px", borderRadius: 8, cursor: "pointer" }}>
+          Add
+        </button>
+      </div>
+      <ul style={{ listStyle: "none", padding: 0, display: "grid", gap: 8 }}>
+        {todos.map((t) => (
+          <li
+            key={t.id}
+            style={{ display: "flex", alignItems: "center", gap: 8, padding: 12, border: "1px solid #eee", borderRadius: 8 }}
+          >
+            <input
+              type="checkbox"
+              checked={t.done}
+              onChange={() =>
+                setTodos((list) => list.map((x) => (x.id === t.id ? { ...x, done: !x.done } : x)))
+              }
+            />
+            <span style={{ flex: 1, textDecoration: t.done ? "line-through" : "none", opacity: t.done ? 0.5 : 1 }}>
+              {t.text}
+            </span>
+            <button
+              onClick={() => setTodos((list) => list.filter((x) => x.id !== t.id))}
+              style={{ border: "none", background: "none", cursor: "pointer", color: "#c00" }}
+            >
+              ✕
+            </button>
+          </li>
+        ))}
+      </ul>
+    </main>
+  );
+}
+`,
+    }),
+  },
+  {
+    id: "landing",
+    name: "Landing Page",
+    description: "A modern product landing page with a hero and feature grid.",
+    files: () => ({
+      ...baseFiles(),
+      "src/App.tsx": `const features = [
+  { title: "Fast", body: "Ships in seconds with a lightweight build." },
+  { title: "Flexible", body: "Ask the AI to reshape any section instantly." },
+  { title: "Beautiful", body: "Sensible defaults you can make your own." },
+];
+
+export default function App() {
+  return (
+    <main style={{ fontFamily: "system-ui", color: "#111" }}>
+      <section style={{ textAlign: "center", padding: "96px 24px", background: "#0f172a", color: "#fff" }}>
+        <h1 style={{ fontSize: 44, margin: 0 }}>Build something people love</h1>
+        <p style={{ fontSize: 18, opacity: 0.8, maxWidth: 520, margin: "16px auto 32px" }}>
+          A starting point for your product landing page. Edit the copy, colors, and layout with the AI.
+        </p>
+        <button style={{ padding: "12px 28px", borderRadius: 999, border: "none", background: "#fff", color: "#0f172a", fontWeight: 600, cursor: "pointer" }}>
+          Get started
+        </button>
+      </section>
+      <section style={{ display: "grid", gap: 24, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", maxWidth: 960, margin: "0 auto", padding: "64px 24px" }}>
+        {features.map((f) => (
+          <div key={f.title} style={{ padding: 24, border: "1px solid #eee", borderRadius: 16 }}>
+            <h3 style={{ marginTop: 0 }}>{f.title}</h3>
+            <p style={{ color: "#555", margin: 0 }}>{f.body}</p>
+          </div>
+        ))}
+      </section>
+    </main>
+  );
+}
+`,
+    }),
+  },
+  {
+    id: "dashboard",
+    name: "Analytics Dashboard",
+    description: "A simple stats dashboard with metric cards and a recent list.",
+    files: () => ({
+      ...baseFiles(),
+      "src/App.tsx": `const stats = [
+  { label: "Revenue", value: "$12,480", delta: "+8.2%" },
+  { label: "Users", value: "3,120", delta: "+3.1%" },
+  { label: "Churn", value: "1.4%", delta: "-0.3%" },
+];
+
+const activity = [
+  "New signup: alex@acme.com",
+  "Payment received: $49",
+  "Report exported by admin",
+];
+
+export default function App() {
+  return (
+    <main style={{ fontFamily: "system-ui", background: "#f8fafc", minHeight: "100vh", padding: 32 }}>
+      <h1 style={{ marginTop: 0 }}>Dashboard</h1>
+      <div style={{ display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", marginBottom: 32 }}>
+        {stats.map((s) => (
+          <div key={s.label} style={{ background: "#fff", borderRadius: 16, padding: 20, boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+            <div style={{ color: "#64748b", fontSize: 13 }}>{s.label}</div>
+            <div style={{ fontSize: 28, fontWeight: 700, margin: "6px 0" }}>{s.value}</div>
+            <div style={{ color: s.delta.startsWith("-") ? "#dc2626" : "#16a34a", fontSize: 13 }}>{s.delta}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ background: "#fff", borderRadius: 16, padding: 20, boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+        <h3 style={{ marginTop: 0 }}>Recent activity</h3>
+        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 10 }}>
+          {activity.map((a, i) => (
+            <li key={i} style={{ padding: "10px 0", borderBottom: i < activity.length - 1 ? "1px solid #eee" : "none", color: "#334155" }}>
+              {a}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </main>
+  );
+}
+`,
+    }),
+  },
+];
 
 export default router;

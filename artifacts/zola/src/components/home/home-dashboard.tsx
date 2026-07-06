@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "wouter";
 import {
   Search,
@@ -31,6 +31,7 @@ import {
 import { formatRelativeTime } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import type { Project } from "@/lib/types";
+import { useSamples } from "@/hooks/use-projects";
 import { ImportDialog } from "./import-dialog";
 import { ReferEarnDialog } from "./refer-earn-dialog";
 import { WorkspaceSwitcher } from "./workspace-switcher";
@@ -41,7 +42,13 @@ interface Props {
   projects: Project[] | undefined;
   isLoading: boolean;
   creating: boolean;
-  onCreate: (prompt?: string) => void;
+  onCreate: (
+    prompt?: string,
+    opts?: {
+      template?: string;
+      attachments?: { path: string; content: string }[];
+    },
+  ) => void;
   onOpenProject: (id: string) => void;
   onDeleteProject: (id: string) => void;
   onSignOut: () => void;
@@ -86,10 +93,49 @@ export function HomeDashboard({
   const [prompt, setPrompt] = useState("");
   const [importOpen, setImportOpen] = useState(false);
   const [referOpen, setReferOpen] = useState(false);
+  const [attachments, setAttachments] = useState<
+    { path: string; content: string }[]
+  >([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { data: samples } = useSamples();
+
+  async function handleFiles(list: FileList | null) {
+    if (!list || list.length === 0) return;
+    const read = await Promise.all(
+      Array.from(list).map(
+        (file) =>
+          new Promise<{ path: string; content: string } | null>((resolve) => {
+            if (file.size > 200_000) {
+              resolve(null);
+              return;
+            }
+            const reader = new FileReader();
+            reader.onload = () =>
+              resolve({ path: file.name, content: String(reader.result ?? "") });
+            reader.onerror = () => resolve(null);
+            reader.readAsText(file);
+          }),
+      ),
+    );
+    const valid = read.filter(
+      (f): f is { path: string; content: string } => f !== null,
+    );
+    setAttachments((prev) => {
+      const merged = [...prev];
+      for (const f of valid) {
+        const i = merged.findIndex((m) => m.path === f.path);
+        if (i >= 0) merged[i] = f;
+        else merged.push(f);
+      }
+      return merged;
+    });
+  }
 
   function submitPrompt() {
     const trimmed = prompt.trim();
-    onCreate(trimmed || undefined);
+    onCreate(trimmed || undefined, {
+      attachments: attachments.length ? attachments : undefined,
+    });
   }
 
   return (
@@ -204,11 +250,49 @@ export function HomeDashboard({
               placeholder="Make a launch video about..."
               className="w-full resize-none bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground"
             />
+            {attachments.length > 0 && (
+              <div className="mb-1 flex flex-wrap gap-1.5">
+                {attachments.map((a) => (
+                  <span
+                    key={a.path}
+                    className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-0.5 text-[11px] text-muted-foreground"
+                  >
+                    <Paperclip className="h-3 w-3" />
+                    <span className="max-w-[140px] truncate">{a.path}</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setAttachments((prev) =>
+                          prev.filter((x) => x.path !== a.path),
+                        )
+                      }
+                      className="ml-0.5 hover:text-foreground"
+                      aria-label={`Remove ${a.path}`}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
             <div className="mt-1 flex items-center justify-between">
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept=".txt,.md,.markdown,.json,.csv,.tsv,.js,.jsx,.ts,.tsx,.html,.css,.scss,.py,.rb,.go,.rs,.java,.php,.yml,.yaml,.xml,.svg,.env,.sql,.sh,text/*"
+                className="hidden"
+                onChange={(e) => {
+                  handleFiles(e.target.files);
+                  e.target.value = "";
+                }}
+              />
               <button
                 type="button"
+                onClick={() => fileInputRef.current?.click()}
                 className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
                 aria-label="Attach"
+                title="Attach reference files"
               >
                 <Paperclip className="h-4 w-4" />
               </button>
@@ -286,6 +370,42 @@ export function HomeDashboard({
               </button>
             ))}
           </div>
+
+          {/* Clone a sample */}
+          {samples && samples.length > 0 && (
+            <div className="mt-14">
+              <div className="mb-3">
+                <h2 className="text-sm font-semibold">Start from a sample</h2>
+                <p className="text-xs text-muted-foreground">
+                  Clone a ready-made project and tweak it with the AI.
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {samples.map((s) => (
+                  <div
+                    key={s.id}
+                    className="flex flex-col rounded-xl border border-border bg-card p-4"
+                  >
+                    <div className="mb-2 flex items-center gap-2">
+                      <Blocks className="h-4 w-4 text-primary" />
+                      <h3 className="text-sm font-medium">{s.name}</h3>
+                    </div>
+                    <p className="flex-1 text-xs text-muted-foreground">
+                      {s.description}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => onCreate(s.name, { template: s.id })}
+                      disabled={creating}
+                      className="mt-3 inline-flex items-center justify-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent disabled:opacity-50"
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Clone this project
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Recent projects */}
           <div className="mt-14">

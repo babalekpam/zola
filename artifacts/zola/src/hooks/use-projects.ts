@@ -39,10 +39,33 @@ export function useProject(id: string | undefined) {
   });
 }
 
+export interface Sample {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export function useSamples() {
+  return useQuery({
+    queryKey: ["project-samples"],
+    queryFn: () =>
+      apiFetch<{ samples: Sample[] }>("/api/projects/samples").then(
+        (d) => d.samples,
+      ),
+    staleTime: Infinity,
+  });
+}
+
 export function useCreateProject() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { name: string; description?: string; org_id?: string }) =>
+    mutationFn: (data: {
+      name: string;
+      description?: string;
+      org_id?: string;
+      template?: string;
+      attachments?: { path: string; content: string }[];
+    }) =>
       apiFetch<{ project: Project }>("/api/projects", {
         method: "POST",
         body: JSON.stringify(data),
