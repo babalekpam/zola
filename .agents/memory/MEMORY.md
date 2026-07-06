@@ -3,5 +3,6 @@
 - [AI SDK version alignment](ai-sdk-version-alignment.md) — @ai-sdk/* package majors are independent of `ai` core major; mixing generations makes useChat return undefined `input` → crash.
 - [WebContainer cross-origin isolation](webcontainer-cross-origin-isolation.md) — Zola preview needs COOP:same-origin + COEP:credentialless in vite.config so SharedArrayBuffer/crossOriginIsolated works behind Replit proxy.
 - [Protected Replit files & tree swap](protected-replit-files.md) — .replit/replit.nix/.replitignore/.cache are tool-managed & undeletable; swap trees via git archive, exclude those, preserve .git/.local/.agents/.cache.
+- [Applying schema to Supabase](supabase-schema-apply.md) — direct host is IPv6-only (no egress); use pooler aws-N-region.pooler.supabase.com user postgres.<ref>. New keys: sb_secret_=service_role.
 - [Verifying auth-gated pages](verify-auth-gated-pages.md) — /projects redirects w/o Supabase session; verify layout via a self-contained mockup-sandbox copy + screenshot, not the main app.
 - [Artifact re-registration after tree swap](artifact-reregistration.md) — copying artifact dirs doesn't register them; run runPostMergeSetup() so reconciliation scans artifact.toml & starts workflows.
