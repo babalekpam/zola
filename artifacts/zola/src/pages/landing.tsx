@@ -12,9 +12,8 @@ export default function LandingPage() {
 
       {/* Nav — full width, borderless */}
       <nav className="flex items-center justify-between px-8 py-5">
-        <Link href="/" className="flex items-center gap-2 font-semibold text-base">
-          <Sparkles className="h-4 w-4" />
-          Loop
+        <Link href="/" className="flex items-center">
+          <img src={`${import.meta.env.BASE_URL}loop-logo.png`} alt="loopafrica" className="h-8 w-auto" />
         </Link>
         <div className="hidden sm:flex items-center gap-8 text-sm text-muted-foreground">
           <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
@@ -164,8 +163,8 @@ export default function Pomodoro() {
       {/* Footer */}
       <footer className="border-t border-border px-8 py-8">
         <div className="mx-auto max-w-5xl flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2 font-medium text-foreground">
-            <Sparkles className="h-4 w-4" /> Loop
+          <div className="flex items-center">
+            <img src={`${import.meta.env.BASE_URL}loop-logo.png`} alt="loopafrica" className="h-6 w-auto" />
           </div>
           <div className="flex flex-wrap gap-6">
             <Link href="/about" className="hover:text-foreground transition-colors">About</Link>
