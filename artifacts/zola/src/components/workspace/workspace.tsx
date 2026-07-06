@@ -6,8 +6,14 @@ import { toast } from "sonner";
 import { ChatPanel } from "@/components/chat/chat-panel";
 import { FileTree } from "@/components/editor/file-tree";
 import { CodeEditor } from "@/components/editor/code-editor";
+import { EditorTabs } from "@/components/editor/editor-tabs";
 import { WebContainerPreview } from "@/components/preview/webcontainer-preview";
 import { ProjectSettings } from "@/components/workspace/project-settings";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from "@/components/ui/resizable";
 import { apiFetch } from "@/hooks/use-projects";
 import type { ChatMessage, Project, ProjectFile } from "@/lib/types";
 
@@ -21,32 +27,52 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
   const [files, setFiles] = useState<Record<string, string>>(() =>
     Object.fromEntries(initialFiles.map((f) => [f.path, f.content])),
   );
-  const [activePath, setActivePath] = useState<string | null>(
+  const initialPath =
     initialFiles.find((f) => f.path === "src/App.tsx")?.path ??
-      initialFiles[0]?.path ??
-      null,
+    initialFiles[0]?.path ??
+    null;
+  const [activePath, setActivePath] = useState<string | null>(initialPath);
+  const [openPaths, setOpenPaths] = useState<string[]>(
+    initialPath ? [initialPath] : [],
   );
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const onSelect = useCallback((p: string) => setActivePath(p), []);
+  const openFile = useCallback((p: string) => {
+    setActivePath(p);
+    setOpenPaths((prev) => (prev.includes(p) ? prev : [...prev, p]));
+  }, []);
+
+  const closeTab = useCallback(
+    (p: string) => {
+      const idx = openPaths.indexOf(p);
+      const next = openPaths.filter((x) => x !== p);
+      setOpenPaths(next);
+      if (activePath === p) {
+        setActivePath(next[idx] ?? next[idx - 1] ?? null);
+      }
+    },
+    [openPaths, activePath],
+  );
 
   const updateFile = useCallback((path: string, next: string) => {
     setFiles((prev) => ({ ...prev, [path]: next }));
     setDirty(true);
   }, []);
 
-  const createFile = useCallback((path: string) => {
-    setFiles((prev) => {
-      if (prev[path] !== undefined) {
+  const createFile = useCallback(
+    (path: string) => {
+      if (files[path] !== undefined) {
         toast.error(`${path} already exists`);
-        return prev;
+        return;
       }
-      return { ...prev, [path]: "" };
-    });
-    setActivePath(path);
-    setDirty(true);
-  }, []);
+      setFiles((prev) => ({ ...prev, [path]: "" }));
+      setActivePath(path);
+      setOpenPaths((prev) => (prev.includes(path) ? prev : [...prev, path]));
+      setDirty(true);
+    },
+    [files],
+  );
 
   const deleteFile = useCallback(
     async (path: string) => {
@@ -55,7 +81,12 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
         delete next[path];
         return next;
       });
-      setActivePath((current) => (current === path ? null : current));
+      const idx = openPaths.indexOf(path);
+      const nextOpen = openPaths.filter((x) => x !== path);
+      setOpenPaths(nextOpen);
+      if (activePath === path) {
+        setActivePath(nextOpen[idx] ?? nextOpen[idx - 1] ?? null);
+      }
       try {
         await apiFetch(`/api/projects/${project.id}/files?path=${encodeURIComponent(path)}`, { method: "DELETE" });
         toast.success(`Deleted ${path}`);
@@ -63,7 +94,7 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
         toast.error("Delete failed on server");
       }
     },
-    [project.id],
+    [project.id, openPaths, activePath],
   );
 
   const renameFile = useCallback(
@@ -76,6 +107,7 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
         }
         return next;
       });
+      setOpenPaths((prev) => prev.map((x) => (x === from ? to : x)));
       setActivePath((cur) => (cur === from ? to : cur));
       setDirty(true);
       try {
@@ -96,10 +128,10 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
         }
         return next;
       });
-      if (incoming[0]) setActivePath(incoming[0].path);
+      if (incoming[0]) openFile(incoming[0].path);
       setDirty(true);
     },
-    [],
+    [openFile],
   );
 
   const save = useCallback(async () => {
@@ -139,8 +171,8 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
           ← Back to projects
         </Link>
       </div>
-      <div className="hidden h-screen w-screen md:grid grid-cols-[380px_1fr_1fr] grid-rows-[48px_1fr]">
-        <header className="col-span-3 flex items-center justify-between border-b border-border bg-background px-4">
+      <div className="hidden h-screen w-screen flex-col md:flex">
+        <header className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-background px-4">
           <div className="flex items-center gap-3">
             <Link
               href="/projects"
@@ -168,44 +200,70 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
           </div>
         </header>
 
-        <section className="border-r border-border overflow-hidden row-start-2">
-          <ChatPanel
-            projectId={project.id}
-            files={files}
-            initialMessages={initialMessages}
-            onApplyFiles={applyFiles}
-          />
-        </section>
+        <ResizablePanelGroup
+          direction="horizontal"
+          autoSaveId="zola-workspace-layout"
+          className="min-h-0 flex-1"
+        >
+          <ResizablePanel defaultSize={24} minSize={16} className="overflow-hidden">
+            <ChatPanel
+              projectId={project.id}
+              files={files}
+              initialMessages={initialMessages}
+              onApplyFiles={applyFiles}
+            />
+          </ResizablePanel>
 
-        <section className="grid grid-rows-[240px_1fr] border-r border-border row-start-2">
-          <div className="overflow-hidden border-b border-border bg-card">
+          <ResizableHandle withHandle />
+
+          <ResizablePanel
+            defaultSize={14}
+            minSize={10}
+            maxSize={28}
+            className="overflow-hidden bg-card"
+          >
             <FileTree
               files={files}
               activePath={activePath}
-              onSelect={onSelect}
+              onSelect={openFile}
               onCreate={createFile}
               onDelete={(p) => void deleteFile(p)}
               onRename={(f, t) => void renameFile(f, t)}
             />
-          </div>
-          <div className="h-full overflow-hidden">
-            {activePath ? (
-              <CodeEditor
-                path={activePath}
-                value={files[activePath] ?? ""}
-                onChange={(v) => updateFile(activePath, v)}
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                Select a file to edit
-              </div>
-            )}
-          </div>
-        </section>
+          </ResizablePanel>
 
-        <section className="row-start-2 overflow-hidden">
-          <WebContainerPreview files={files} />
-        </section>
+          <ResizableHandle withHandle />
+
+          <ResizablePanel defaultSize={37} minSize={20} className="overflow-hidden">
+            <div className="flex h-full flex-col">
+              <EditorTabs
+                openPaths={openPaths}
+                activePath={activePath}
+                onSelect={openFile}
+                onClose={closeTab}
+              />
+              <div className="min-h-0 flex-1">
+                {activePath ? (
+                  <CodeEditor
+                    path={activePath}
+                    value={files[activePath] ?? ""}
+                    onChange={(v) => updateFile(activePath, v)}
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                    Select a file to edit
+                  </div>
+                )}
+              </div>
+            </div>
+          </ResizablePanel>
+
+          <ResizableHandle withHandle />
+
+          <ResizablePanel defaultSize={25} minSize={15} className="overflow-hidden">
+            <WebContainerPreview files={files} />
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
     </>
   );
