@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "./use-projects";
+import { useAuth } from "./use-auth";
 
 export interface Organization {
   id: string;
@@ -28,12 +29,14 @@ export interface OrgInvite {
 }
 
 export function useOrganizations() {
+  const { user } = useAuth();
   return useQuery({
     queryKey: ["organizations"],
     queryFn: () =>
       apiFetch<{ organizations: Organization[] }>("/api/orgs").then(
         (d) => d.organizations,
       ),
+    enabled: !!user,
   });
 }
 

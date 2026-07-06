@@ -10,7 +10,7 @@ export default function ProjectsPage() {
   const { user, signOut } = useAuth();
   const [, setLocation] = useLocation();
   const { activeOrgId } = useActiveOrg();
-  const { data: projects, isLoading } = useProjects(activeOrgId ?? undefined);
+  const { data: projects, isLoading } = useProjects(activeOrgId);
   const createProject = useCreateProject();
   const deleteProject = useDeleteProject();
   const [creating, setCreating] = useState(false);
