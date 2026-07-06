@@ -59,6 +59,18 @@ export function useDeleteProject() {
   });
 }
 
+export function useImportProject() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (repoUrl: string) =>
+      apiFetch<{ project: Project; fileCount: number }>(
+        "/api/projects/import",
+        { method: "POST", body: JSON.stringify({ repoUrl }) },
+      ),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["projects"] }),
+  });
+}
+
 export function useUpdateProject() {
   const qc = useQueryClient();
   return useMutation({

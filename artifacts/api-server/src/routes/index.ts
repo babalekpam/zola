@@ -4,6 +4,8 @@ import chatRouter from "./chat";
 import projectsRouter from "./projects";
 import accountRouter from "./account";
 import stripeRouter from "./stripe";
+import collabRouter from "./collab";
+import referralRouter from "./referral";
 
 const router: IRouter = Router();
 
@@ -12,5 +14,7 @@ router.use(chatRouter);
 router.use(projectsRouter);
 router.use(accountRouter);
 router.use(stripeRouter);
+router.use(collabRouter);
+router.use(referralRouter);
 
 export default router;

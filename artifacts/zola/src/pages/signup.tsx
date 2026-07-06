@@ -3,6 +3,15 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 
+function readReferralCode(): string | undefined {
+  const fromUrl = new URLSearchParams(window.location.search).get("ref");
+  if (fromUrl) {
+    localStorage.setItem("loop_ref", fromUrl);
+    return fromUrl;
+  }
+  return localStorage.getItem("loop_ref") ?? undefined;
+}
+
 export default function SignupPage() {
   const [, setLocation] = useLocation();
   const [email, setEmail] = useState("");
@@ -16,16 +25,25 @@ export default function SignupPage() {
     setLoading(true);
     setError(null);
     const supabase = createSupabaseBrowserClient();
+    const referralCode = readReferralCode();
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: referralCode ? { referral_code: referralCode } : undefined,
+      },
     });
     setLoading(false);
     if (error) { setError(error.message); return; }
+    if (referralCode) localStorage.removeItem("loop_ref");
     // If email confirmation is disabled in Supabase, signUp returns an active
     // session immediately — send the user straight into the app.
-    if (data.session) { setLocation("/projects"); return; }
+    if (data.session) {
+      const pendingInvite = localStorage.getItem("loop_pending_invite");
+      setLocation(pendingInvite ? `/invite/${pendingInvite}` : "/projects");
+      return;
+    }
     setSent(true);
   }
 

@@ -2,8 +2,65 @@
 import { Router } from "express";
 import { createSupabaseServerClient } from "../lib/supabase";
 import { DEFAULT_MODEL_ID } from "../lib/ai/models";
+import { fetchRepoFiles } from "../lib/github";
 
 const router = Router();
+
+router.post("/projects/import", async (req, res) => {
+  const supabase = createSupabaseServerClient(req, res);
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  const { repoUrl } = req.body as { repoUrl?: string };
+  if (!repoUrl || typeof repoUrl !== "string") {
+    res.status(400).json({ error: "repoUrl is required" });
+    return;
+  }
+
+  let imported: { name: string; files: { path: string; content: string }[] };
+  try {
+    imported = await fetchRepoFiles(repoUrl);
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : "Import failed" });
+    return;
+  }
+
+  const { data: project, error } = await supabase
+    .from("projects")
+    .insert({
+      name: imported.name,
+      description: `Imported from ${repoUrl.trim()}`,
+      owner_id: userData.user.id,
+      default_model: DEFAULT_MODEL_ID,
+    })
+    .select("*")
+    .single();
+
+  if (error || !project) {
+    res.status(500).json({ error: error?.message ?? "Failed to create project" });
+    return;
+  }
+
+  const rows = imported.files.map((f) => ({
+    project_id: project.id,
+    path: f.path,
+    content: f.content,
+  }));
+  for (let i = 0; i < rows.length; i += 100) {
+    const { error: fileErr } = await supabase
+      .from("project_files")
+      .insert(rows.slice(i, i + 100));
+    if (fileErr) {
+      // Compensate: drop the half-imported project so no broken shell remains
+      // (project_files cascade on delete).
+      await supabase.from("projects").delete().eq("id", project.id);
+      res.status(500).json({ error: fileErr.message });
+      return;
+    }
+  }
+
+  res.json({ project, fileCount: rows.length });
+});
 
 router.get("/projects", async (req, res) => {
   const supabase = createSupabaseServerClient(req, res);

@@ -10,6 +10,7 @@ import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
 import AuthCallbackPage from "@/pages/auth-callback";
 import ProjectsPage from "@/pages/projects";
+import InvitePage from "@/pages/invite";
 import WorkspacePage from "@/pages/workspace";
 import BillingPage from "@/pages/billing";
 import AccountPage from "@/pages/account";
@@ -35,6 +36,7 @@ function AppRouter() {
       <Route path="/reset-password" component={ResetPasswordPage} />
       <Route path="/auth/callback" component={AuthCallbackPage} />
       <Route path="/projects" component={ProjectsPage} />
+      <Route path="/invite/:token" component={InvitePage} />
       <Route path="/projects/:id" component={WorkspacePage} />
       <Route path="/billing" component={BillingPage} />
       <Route path="/account" component={AccountPage} />

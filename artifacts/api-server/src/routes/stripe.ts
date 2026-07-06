@@ -142,6 +142,21 @@ router.post("/stripe/webhook", async (req, res) => {
         },
         { onConflict: "user_id" },
       );
+
+    if (sub.status === "active" || sub.status === "trialing") {
+      await qualifyReferral(userId);
+    }
+  }
+
+  // When a referred user starts paying, mark the referral qualified and credit
+  // the referrer once. Idempotency + concurrency safety live in the SQL
+  // function: a conditional UPDATE claims the pending row and only then credits.
+  async function qualifyReferral(referredUserId: string) {
+    const { error } = await adminClient().rpc("qualify_referral", {
+      p_referred: referredUserId,
+      p_reward: 2000,
+    });
+    if (error) console.error("qualify_referral failed:", error.message);
   }
 
   switch (event.type) {

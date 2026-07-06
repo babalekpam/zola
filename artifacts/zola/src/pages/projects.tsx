@@ -35,6 +35,7 @@ export default function ProjectsPage() {
   return (
     <HomeDashboard
       userName={userName}
+      userId={user.id}
       projects={projects}
       isLoading={isLoading}
       creating={creating || createProject.isPending}

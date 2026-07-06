@@ -33,9 +33,13 @@ import {
 import { formatRelativeTime } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import type { Project } from "@/lib/types";
+import { ImportDialog } from "./import-dialog";
+import { InviteDialog } from "./invite-dialog";
+import { ReferEarnDialog } from "./refer-earn-dialog";
 
 interface Props {
   userName: string;
+  userId: string;
   projects: Project[] | undefined;
   isLoading: boolean;
   creating: boolean;
@@ -72,6 +76,7 @@ const EXAMPLE_PROMPTS = [
 
 export function HomeDashboard({
   userName,
+  userId,
   projects,
   isLoading,
   creating,
@@ -81,6 +86,9 @@ export function HomeDashboard({
   onSignOut,
 }: Props) {
   const [prompt, setPrompt] = useState("");
+  const [importOpen, setImportOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [referOpen, setReferOpen] = useState(false);
 
   function submitPrompt() {
     const trimmed = prompt.trim();
@@ -122,19 +130,18 @@ export function HomeDashboard({
           </button>
           <button
             type="button"
+            onClick={() => setImportOpen(true)}
             className="flex w-full items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent"
           >
             <Download className="h-4 w-4" /> Import code or design
           </button>
           <button
             type="button"
+            onClick={() => setInviteOpen(true)}
             className="flex w-full items-center justify-between rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
           >
             <span className="flex items-center gap-2">
               <UserPlus className="h-4 w-4" /> Invite
-            </span>
-            <span className="rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-              3 free
             </span>
           </button>
         </div>
@@ -164,6 +171,7 @@ export function HomeDashboard({
             </div>
             <button
               type="button"
+              onClick={() => setReferOpen(true)}
               className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90"
             >
               <Gift className="h-3.5 w-3.5" /> Refer &amp; Earn
@@ -351,6 +359,15 @@ export function HomeDashboard({
           </div>
         </div>
       </main>
+
+      <ImportDialog open={importOpen} onOpenChange={setImportOpen} />
+      <InviteDialog
+        open={inviteOpen}
+        onOpenChange={setInviteOpen}
+        projects={projects}
+        currentUserId={userId}
+      />
+      <ReferEarnDialog open={referOpen} onOpenChange={setReferOpen} />
     </div>
   );
 }
