@@ -2,6 +2,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Sparkles } from "lucide-react";
+import { LoopLogo } from "@/components/brand/logo";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { AccountForms } from "@/components/account/account-forms";
 
@@ -26,7 +27,7 @@ export default async function AccountPage() {
           <ArrowLeft className="h-4 w-4" /> Projects
         </Link>
         <Link href="/" className="flex items-center gap-2 text-base font-semibold">
-          <Sparkles className="h-4 w-4 text-primary" /> Loop
+          <LoopLogo markClassName="h-5 w-5" />
         </Link>
       </header>
 

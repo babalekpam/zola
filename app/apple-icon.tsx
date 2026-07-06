@@ -10,20 +10,24 @@ export default function AppleIcon() {
     (
       <div
         style={{
-          background: "linear-gradient(135deg, #f59e0b 0%, #ec4899 100%)",
+          background: "#0e1525",
           width: "100%",
           height: "100%",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: 110,
-          fontWeight: 700,
-          color: "white",
-          fontFamily: "system-ui",
           borderRadius: 32,
         }}
       >
-        Z
+        <svg width="130" height="130" viewBox="0 0 64 64" fill="none">
+          <path
+            d="M32 8 A24 24 0 1 0 56 32 A12 12 0 0 0 44 20"
+            stroke="#F26207"
+            strokeWidth="9"
+            strokeLinecap="round"
+            fill="none"
+          />
+        </svg>
       </div>
     ),
     { ...size },

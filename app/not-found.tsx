@@ -1,12 +1,13 @@
 // Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
+import { LoopLogo } from "@/components/brand/logo";
 
 export default function NotFound() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background px-6 text-center">
       <Link href="/" className="mb-8 flex items-center gap-2 text-lg font-semibold">
-        <Sparkles className="h-5 w-5 text-primary" /> Loop
+        <LoopLogo markClassName="h-6 w-6" />
       </Link>
       <p className="text-sm text-muted-foreground">404</p>
       <h1 className="mt-2 text-3xl font-bold">Page not found</h1>

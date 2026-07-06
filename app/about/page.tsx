@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 import Link from "next/link";
 import { Sparkles, Code2, Cpu, Globe } from "lucide-react";
+import { LoopLogo } from "@/components/brand/logo";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -14,7 +15,7 @@ export default function AboutPage() {
     <main className="mx-auto min-h-screen max-w-3xl px-6 py-16">
       <nav className="mb-12 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
-          <Sparkles className="h-5 w-5 text-primary" /> Loop
+          <LoopLogo markClassName="h-6 w-6" />
         </Link>
         <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
           ← Home

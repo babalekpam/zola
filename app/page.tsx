@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 import Link from "next/link";
 import { Code2, Cpu, Sparkles, Terminal } from "lucide-react";
+import { LoopLogo } from "@/components/brand/logo";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PromptBox } from "@/components/home/prompt-box";
 
@@ -23,7 +24,7 @@ export default async function LandingPage() {
     <main className="mx-auto min-h-screen max-w-5xl px-6 py-10 sm:py-20">
       <nav className="flex flex-wrap items-center justify-between gap-3 pb-10 sm:pb-16">
         <div className="flex items-center gap-2 text-lg font-semibold">
-          <Sparkles className="h-5 w-5 text-primary" /> Loop
+          <LoopLogo markClassName="h-6 w-6" />
           <span className="ml-2 rounded-full border border-border px-2 py-0.5 text-[10px] font-normal uppercase tracking-wider text-muted-foreground">
             by Argilette Lab
           </span>

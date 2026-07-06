@@ -1,0 +1,11 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Copyright (c) 2026 Argilette Lab. LoopAfrica brand mark. -->
+  <defs>
+    <linearGradient id="loopg" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF8A3C"/>
+      <stop offset="1" stop-color="#F26207"/>
+    </linearGradient>
+  </defs>
+  <path d="M32 8 A24 24 0 1 0 56 32 A12 12 0 0 0 44 20"
+        stroke="url(#loopg)" stroke-width="9" stroke-linecap="round" fill="none"/>
+</svg>

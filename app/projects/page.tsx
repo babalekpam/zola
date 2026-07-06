@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Plus, Sparkles } from "lucide-react";
+import { LoopLogo } from "@/components/brand/logo";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { NewProjectButton } from "@/components/projects/new-project-button";
 import { ProjectCard } from "@/components/projects/project-card";
@@ -27,7 +28,7 @@ export default async function ProjectsPage() {
       <header className="mb-8 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
-            <Sparkles className="h-5 w-5 text-primary" /> Loop
+            <LoopLogo markClassName="h-6 w-6" />
           </Link>
         </div>
         <div className="flex items-center gap-4 text-sm">

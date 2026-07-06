@@ -2,7 +2,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "Loop — Vibe code with any LLM, by Argilette Lab";
+export const alt = "LoopAfrica — Turn your idea into an app. Just describe it.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -11,7 +11,7 @@ export default function OG() {
     (
       <div
         style={{
-          background: "#0a0a0a",
+          background: "#0e1525",
           width: "100%",
           height: "100%",
           display: "flex",
@@ -19,61 +19,50 @@ export default function OG() {
           justifyContent: "space-between",
           padding: 80,
           fontFamily: "system-ui",
-          color: "white",
+          color: "#f5f9fc",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <div
-            style={{
-              width: 56,
-              height: 56,
-              borderRadius: 12,
-              background:
-                "linear-gradient(135deg, #f59e0b 0%, #ec4899 100%)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 36,
-              fontWeight: 700,
-            }}
-          >
-            Z
-          </div>
-          <span style={{ fontSize: 28, fontWeight: 600 }}>Loop</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+          <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+            <path
+              d="M32 8 A24 24 0 1 0 56 32 A12 12 0 0 0 44 20"
+              stroke="#F26207"
+              strokeWidth="9"
+              strokeLinecap="round"
+              fill="none"
+            />
+          </svg>
+          <span style={{ fontSize: 34, fontWeight: 700, display: "flex" }}>
+            loop<span style={{ color: "#F26207" }}>africa</span>
+          </span>
           <span
             style={{
-              padding: "4px 10px",
+              padding: "4px 12px",
               borderRadius: 999,
-              border: "1px solid #333",
-              fontSize: 14,
-              color: "#a3a3a3",
+              border: "1px solid #2b3245",
+              fontSize: 15,
+              color: "#9da2b3",
             }}
           >
             by Argilette Lab
           </span>
         </div>
         <div>
-          <div style={{ fontSize: 76, fontWeight: 700, lineHeight: 1.05 }}>
-            Build apps by chatting.
+          <div style={{ fontSize: 74, fontWeight: 700, lineHeight: 1.05 }}>
+            Turn your idea into an app.
           </div>
           <div
             style={{
-              fontSize: 76,
+              fontSize: 74,
               fontWeight: 700,
               lineHeight: 1.05,
-              color: "#737373",
+              color: "#9da2b3",
             }}
           >
-            Run them in the browser.
+            Just describe it.
           </div>
-          <div
-            style={{
-              marginTop: 32,
-              fontSize: 22,
-              color: "#a3a3a3",
-            }}
-          >
-            Multi-LLM vibe coding · Claude · GPT · Gemini · NVIDIA · OpenRouter
+          <div style={{ marginTop: 32, fontSize: 22, color: "#9da2b3" }}>
+            AI vibe coding · powered by Claude · loopafrica.org
           </div>
         </div>
       </div>

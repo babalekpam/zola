@@ -9,6 +9,7 @@ import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
 import { ModelPicker } from "./model-picker";
 import { Button } from "@/components/ui/button";
+import { LoopMark } from "@/components/brand/logo";
 import { DEFAULT_MODEL_ID } from "@/lib/ai/models";
 import { parseFileBlocks, stripFileBlocks } from "@/lib/ai/parse-files";
 import { cn } from "@/lib/utils";
@@ -102,7 +103,7 @@ export function ChatPanel({
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
         <div className="flex items-center gap-2 text-sm font-medium">
-          <Sparkles className="h-4 w-4 text-primary" />
+          <LoopMark className="h-4 w-4" />
           Agent
         </div>
         <ModelPicker value={modelId} onChange={setModelId} />
@@ -171,7 +172,7 @@ function WorkingIndicator() {
 function EmptyState() {
   return (
     <div className="flex h-full flex-col items-center justify-center px-6 text-center">
-      <Sparkles className="mb-3 h-8 w-8 text-primary" />
+      <LoopMark className="mb-3 h-8 w-8" />
       <h2 className="text-lg font-semibold">What should we build?</h2>
       <p className="mt-1 max-w-sm text-sm text-muted-foreground">
         Describe an app — “a pomodoro timer with dark mode”, “a recipe
