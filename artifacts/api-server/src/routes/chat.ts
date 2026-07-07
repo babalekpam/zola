@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 import { Router } from "express";
 import { streamText, type CoreMessage } from "ai";
-import { resolveModel } from "../lib/ai/providers";
+import { resolveModelWithFallback } from "../lib/ai/providers";
 import { CODING_SYSTEM_PROMPT, PLANNING_SYSTEM_PROMPT } from "../lib/ai/system-prompt";
 import { DEFAULT_MODEL_ID } from "../lib/ai/models";
 import { createSupabaseServerClient } from "../lib/supabase";
@@ -35,8 +35,9 @@ router.post("/chat", async (req, res) => {
       projectId?: string;
       planMode?: boolean;
     };
-    const modelId = body.modelId ?? DEFAULT_MODEL_ID;
-    const model = resolveModel(modelId);
+    const requestedModelId = body.modelId ?? DEFAULT_MODEL_ID;
+    const { model, usedModelId } = resolveModelWithFallback(requestedModelId);
+    const modelId = usedModelId;
 
     const projectContext = body.projectFiles
       ? `\n\nCurrent project files:\n${Object.entries(body.projectFiles)

@@ -31,7 +31,25 @@ export const MODELS: ModelDescriptor[] = [
   { id: "nvidia-llama-3.1-nemotron-70b", label: "Llama 3.1 Nemotron 70B", provider: "nvidia", modelId: "nvidia/llama-3.1-nemotron-70b-instruct" },
 ];
 
-export const DEFAULT_MODEL_ID = "nvidia-qwen-coder-32b";
+export const DEFAULT_MODEL_ID = "claude-sonnet-4-6";
+
+// First model to try per provider when falling back.
+export const PROVIDER_DEFAULT_MODEL: Record<ProviderId, string> = {
+  anthropic: "claude-sonnet-4-6",
+  openai: "gpt-5-mini",
+  google: "gemini-2.5-flash",
+  openrouter: "kimi-k2",
+  nvidia: "nvidia-qwen-coder-32b",
+};
+
+// Fallback order when the requested provider has no API key.
+export const PROVIDER_PRIORITY: ProviderId[] = [
+  "anthropic",
+  "openai",
+  "google",
+  "nvidia",
+  "openrouter",
+];
 
 export function getModelById(id: string): ModelDescriptor | undefined {
   return MODELS.find((m) => m.id === id);
