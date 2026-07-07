@@ -265,8 +265,14 @@ $$;
 -- Widen read access to members while keeping project writes owner-only.
 drop policy if exists "projects: owner read"  on public.projects;
 drop policy if exists "projects: member read" on public.projects;
+-- The owner_id short-circuit is required for `insert ... returning` (Supabase's
+-- .insert().select()): RETURNING re-checks the SELECT policy on the new row, but
+-- has_project_access() re-queries projects by id and the just-inserted row is not
+-- yet visible to that STABLE function's snapshot, so it would wrongly deny the
+-- row. Reading owner_id directly off the new row avoids the re-query entirely.
 create policy "projects: member read"
-  on public.projects for select using (public.has_project_access(id));
+  on public.projects for select
+  using (owner_id = auth.uid() or public.has_project_access(id));
 
 drop policy if exists "files: via project" on public.project_files;
 create policy "files: via project"
