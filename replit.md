@@ -48,6 +48,7 @@ Zola is a Replit-style, AI-first coding platform: users describe an app in chat,
 - Workspace: AI chat (multi-model, plan mode, voice input), file tree + Monaco editor, Run/Stop/Restart, Webview with address bar, Console, interactive Shell, Secrets, key-value Database, History (checkpoints + restore), Deploy (public static hosting), Git (push/export to GitHub), live presence avatars + live file sync between collaborators (last-write-wins per file).
 - Community: projects can be made public in settings; `/explore` lists them (works logged out) with like counts, and anyone can Remix (fork) one into their active workspace. Dashboard shows a categorized template gallery (11 templates) and per-card Duplicate.
 - Custom domains: orgs link their own domain to a project's deployment in the Deploy tab (DNS TXT challenge `_zola-challenge.<domain>` + CNAME); verified domains are served by Host header via `customDomainMiddleware`. TLS for custom domains terminates at the fronting infra (Cloudflare/Cloud Run domain mapping/Caddy) — the app only routes by Host.
+- Platform admin: `/admin` — cross-tenant stats (users/orgs/projects/deployments/messages), user + workspace + project tables, moderation (force-private, delete). Access = authenticated email ∈ `PLATFORM_ADMIN_EMAILS` (comma-separated env var), enforced server-side via the service role; the page itself is just a 403 renderer for everyone else.
 
 ## User preferences
 
