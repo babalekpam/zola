@@ -54,6 +54,8 @@
     "@vitejs/plugin-react": "catalog:",
     "@webcontainer/api": "^1.6.4",
     "@workspace/api-client-react": "workspace:*",
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/xterm": "^5.5.0",
     "ai": "^4.0.0",
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",

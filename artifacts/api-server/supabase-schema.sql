@@ -586,3 +586,33 @@ alter table public.subscriptions enable row level security;
 drop policy if exists "subscriptions: self read" on public.subscriptions;
 create policy "subscriptions: self read"
   on public.subscriptions for select using (auth.uid() = user_id);
+
+-- ============================================================================
+-- Project secrets (Replit-style env vars). Values are injected into the
+-- WebContainer dev server + shell as process env. Access follows the same
+-- has_project_access rule as files/messages, so collaborators share secrets.
+-- ============================================================================
+
+create table if not exists public.project_secrets (
+  id         uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  key        text not null,
+  value      text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (project_id, key)
+);
+
+create index if not exists project_secrets_project_idx on public.project_secrets(project_id);
+
+drop trigger if exists project_secrets_touch on public.project_secrets;
+create trigger project_secrets_touch before update on public.project_secrets
+  for each row execute function public.touch_updated_at();
+
+alter table public.project_secrets enable row level security;
+
+drop policy if exists "secrets: via project" on public.project_secrets;
+create policy "secrets: via project"
+  on public.project_secrets for all
+  using (public.has_project_access(project_id))
+  with check (public.has_project_access(project_id));

@@ -7,7 +7,8 @@ import { ChatPanel } from "@/components/chat/chat-panel";
 import { FileTree } from "@/components/editor/file-tree";
 import { CodeEditor } from "@/components/editor/code-editor";
 import { EditorTabs } from "@/components/editor/editor-tabs";
-import { WebContainerPreview } from "@/components/preview/webcontainer-preview";
+import { ToolPane } from "@/components/workspace/tool-pane";
+import { RunButton } from "@/components/workspace/run-button";
 import { ProjectSettings } from "@/components/workspace/project-settings";
 import {
   ResizablePanelGroup,
@@ -15,6 +16,8 @@ import {
   ResizableHandle,
 } from "@/components/ui/resizable";
 import { apiFetch } from "@/hooks/use-projects";
+import { useSecrets } from "@/hooks/use-secrets";
+import { runtime } from "@/lib/webcontainer/runtime";
 import type { ChatMessage, Project, ProjectFile } from "@/lib/types";
 
 interface Props {
@@ -37,6 +40,28 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
   );
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { data: secrets, isLoading: secretsLoading } = useSecrets(project.id);
+
+  // Keep the WebContainer runtime fed with the latest files (hot remount while
+  // running) and project secrets (picked up on the next Run / shell spawn).
+  useEffect(() => {
+    void runtime.setFiles(files);
+  }, [files]);
+
+  useEffect(() => {
+    if (secrets) {
+      runtime.setEnv(Object.fromEntries(secrets.map((s) => [s.key, s.value])));
+    }
+  }, [secrets]);
+
+  // Auto-run once when the workspace opens, after secrets have loaded (or
+  // failed to), so the webview comes up without pressing Run — matching the
+  // old preview behavior.
+  useEffect(() => {
+    if (secretsLoading) return;
+    if (runtime.state.status === "idle") void runtime.run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [secretsLoading]);
 
   const openFile = useCallback((p: string) => {
     setActivePath(p);
@@ -186,17 +211,20 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
             </span>
             <ProjectSettings project={project} />
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            {dirty ? "Unsaved changes" : "All changes saved"}
-            <button
-              type="button"
-              onClick={() => void save()}
-              disabled={!dirty || saving}
-              className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 text-xs hover:bg-accent disabled:opacity-50"
-            >
-              <Save className="h-3.5 w-3.5" />
-              {saving ? "Saving…" : "Save"}
-            </button>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              {dirty ? "Unsaved changes" : "All changes saved"}
+              <button
+                type="button"
+                onClick={() => void save()}
+                disabled={!dirty || saving}
+                className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 text-xs hover:bg-accent disabled:opacity-50"
+              >
+                <Save className="h-3.5 w-3.5" />
+                {saving ? "Saving…" : "Save"}
+              </button>
+            </div>
+            <RunButton />
           </div>
         </header>
 
@@ -261,7 +289,7 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
           <ResizableHandle withHandle />
 
           <ResizablePanel defaultSize={25} minSize={15} className="overflow-hidden">
-            <WebContainerPreview files={files} />
+            <ToolPane projectId={project.id} />
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
