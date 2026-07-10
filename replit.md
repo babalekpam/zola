@@ -45,7 +45,8 @@ Zola is a Replit-style, AI-first coding platform: users describe an app in chat,
 ## Product
 
 - Home dashboard: create from templates (todo, landing, dashboard, snake, portfolio, blog, Express API), import from GitHub, attach reference docs (PDF/Word), organizations/workspaces, referrals, billing (Stripe).
-- Workspace: AI chat (multi-model, plan mode, voice input), file tree + Monaco editor, Run/Stop/Restart, Webview with address bar, Console, interactive Shell, Secrets, key-value Database, History (checkpoints + restore), Deploy (public static hosting), live presence avatars.
+- Workspace: AI chat (multi-model, plan mode, voice input), file tree + Monaco editor, Run/Stop/Restart, Webview with address bar, Console, interactive Shell, Secrets, key-value Database, History (checkpoints + restore), Deploy (public static hosting), Git (push/export to GitHub), live presence avatars + live file sync between collaborators (last-write-wins per file).
+- Community: projects can be made public in settings; `/explore` lists them (works logged out) and anyone can Remix (fork) one into their own workspace.
 
 ## User preferences
 
@@ -53,7 +54,8 @@ Zola is a Replit-style, AI-first coding platform: users describe an app in chat,
 
 ## Gotchas
 
-- `supabase-schema.sql` changes must be applied to the live Supabase project manually (pooler connection; direct host is IPv6-only). New tables since last apply: `project_secrets`, `project_snapshots`, `deployments`, `deployment_files`, `project_kv`, and `projects.db_token`.
+- `supabase-schema.sql` changes must be applied to the live Supabase project manually (pooler connection; direct host is IPv6-only). New since last apply: tables `project_secrets`, `project_snapshots`, `deployments`, `deployment_files`, `project_kv`, `project_db_tokens`; `projects.visibility` + `projects.github_repo` columns and public-read policies.
+- The KV capability token must NEVER be a readable column on `projects` — public projects are world-readable and the token grants writes. It lives in `project_db_tokens` (RLS on, no policies, service-role only) and is only returned by GET /api/projects/:id to users passing `has_project_access`.
 - WebContainer needs cross-origin isolation (COOP/COEP headers in `vite.config.ts`) and an API key (`VITE_WEBCONTAINER_API_KEY`) on non-localhost origins.
 - Express 5 route syntax: wildcards are named (`/sites/:slug{/*splat}`); `*splat` alone requires ≥1 segment.
 - `express.json` limit is raised to 30 MB for deployment uploads; `/db` uses `express.text` and is mounted before the credentialed CORS policy.

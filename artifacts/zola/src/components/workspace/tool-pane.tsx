@@ -3,6 +3,7 @@ import { useState } from "react";
 import {
   AppWindow,
   Database,
+  GitBranch,
   History,
   KeyRound,
   Rocket,
@@ -16,7 +17,9 @@ import { SecretsPane } from "@/components/workspace/secrets-pane";
 import { DatabasePane } from "@/components/workspace/database-pane";
 import { HistoryPane } from "@/components/workspace/history-pane";
 import { DeployPane } from "@/components/workspace/deploy-pane";
+import { GitPane } from "@/components/workspace/git-pane";
 import { cn } from "@/lib/utils";
+import type { Project } from "@/lib/types";
 
 type Tool =
   | "webview"
@@ -25,7 +28,8 @@ type Tool =
   | "secrets"
   | "database"
   | "history"
-  | "deploy";
+  | "deploy"
+  | "git";
 
 const TABS: { id: Tool; label: string; icon: typeof AppWindow }[] = [
   { id: "webview", label: "Webview", icon: AppWindow },
@@ -35,10 +39,11 @@ const TABS: { id: Tool; label: string; icon: typeof AppWindow }[] = [
   { id: "database", label: "DB", icon: Database },
   { id: "history", label: "History", icon: History },
   { id: "deploy", label: "Deploy", icon: Rocket },
+  { id: "git", label: "Git", icon: GitBranch },
 ];
 
 interface Props {
-  projectId: string;
+  project: Project;
   dbToken: string | null;
   files: Record<string, string>;
   onRestore: (files: Record<string, string>) => void;
@@ -49,7 +54,8 @@ interface Props {
  * Deploy. Panes stay mounted once opened (hidden with CSS) so the webview
  * doesn't reload and the shell session survives tab switches.
  */
-export function ToolPane({ projectId, dbToken, files, onRestore }: Props) {
+export function ToolPane({ project, dbToken, files, onRestore }: Props) {
+  const projectId = project.id;
   const [active, setActive] = useState<Tool>("webview");
   const [opened, setOpened] = useState<Set<Tool>>(new Set<Tool>(["webview"]));
 
@@ -117,6 +123,11 @@ export function ToolPane({ projectId, dbToken, files, onRestore }: Props) {
         {opened.has("deploy") && (
           <div className={cn("absolute inset-0", active !== "deploy" && "hidden")}>
             <DeployPane projectId={projectId} />
+          </div>
+        )}
+        {opened.has("git") && (
+          <div className={cn("absolute inset-0", active !== "git" && "hidden")}>
+            <GitPane project={project} />
           </div>
         )}
       </div>

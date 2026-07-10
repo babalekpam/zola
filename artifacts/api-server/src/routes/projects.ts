@@ -1,6 +1,9 @@
 // Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 import { Router } from "express";
-import { createSupabaseServerClient } from "../lib/supabase";
+import {
+  createSupabaseAdminClient,
+  createSupabaseServerClient,
+} from "../lib/supabase";
 import { DEFAULT_MODEL_ID } from "../lib/ai/models";
 import { fetchRepoFiles } from "../lib/github";
 
@@ -206,7 +209,33 @@ router.get("/projects/:id", async (req, res) => {
     .select("*")
     .eq("project_id", id);
 
-  res.json({ project, files: files ?? [] });
+  // The KV capability token is only handed to users with project access —
+  // NOT to anonymous readers of public projects (it grants KV writes). It
+  // lives in a service-role-only table and is minted on first request.
+  let dbToken: string | null = null;
+  const { data: hasAccess } = await supabase.rpc("has_project_access", { pid: id });
+  if (hasAccess === true) {
+    const admin = createSupabaseAdminClient();
+    if (admin) {
+      const { data: existing } = await admin
+        .from("project_db_tokens")
+        .select("token")
+        .eq("project_id", id)
+        .maybeSingle();
+      if (existing) {
+        dbToken = existing.token;
+      } else {
+        const { data: minted } = await admin
+          .from("project_db_tokens")
+          .insert({ project_id: id })
+          .select("token")
+          .single();
+        dbToken = minted?.token ?? null;
+      }
+    }
+  }
+
+  res.json({ project: { ...project, db_token: dbToken }, files: files ?? [] });
 });
 
 router.delete("/projects/:id", async (req, res) => {
@@ -224,10 +253,23 @@ router.patch("/projects/:id", async (req, res) => {
     name: string;
     description: string;
     default_model: string;
+    visibility: string;
   }>;
+  // Whitelist updatable fields so a crafted body can't touch anything else.
+  const update: Record<string, string> = {};
+  if (typeof body.name === "string") update.name = body.name;
+  if (typeof body.description === "string") update.description = body.description;
+  if (typeof body.default_model === "string") update.default_model = body.default_model;
+  if (body.visibility === "public" || body.visibility === "private") {
+    update.visibility = body.visibility;
+  }
+  if (Object.keys(update).length === 0) {
+    res.status(400).json({ error: "No valid fields to update" });
+    return;
+  }
   const { data, error } = await supabase
     .from("projects")
-    .update(body)
+    .update(update)
     .eq("id", id)
     .select("*")
     .single();

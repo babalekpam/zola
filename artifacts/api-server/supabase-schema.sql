@@ -692,10 +692,16 @@ create policy "deployment files: via project"
   ));
 
 -- Per-project capability token the running app uses to reach its database.
-alter table public.projects
-  add column if not exists db_token uuid not null default gen_random_uuid();
+-- Deliberately NOT a column on projects: projects can be publicly readable
+-- (Explore), and the token grants KV write access, so it lives in a table
+-- with RLS enabled and NO policies — service-role access only, via the API.
+create table if not exists public.project_db_tokens (
+  project_id uuid primary key references public.projects(id) on delete cascade,
+  token      uuid not null unique default gen_random_uuid(),
+  created_at timestamptz not null default now()
+);
 
-create unique index if not exists projects_db_token_idx on public.projects(db_token);
+alter table public.project_db_tokens enable row level security;
 
 create table if not exists public.project_kv (
   project_id uuid not null references public.projects(id) on delete cascade,
@@ -712,3 +718,33 @@ create policy "kv: via project"
   on public.project_kv for all
   using (public.has_project_access(project_id))
   with check (public.has_project_access(project_id));
+
+-- ============================================================================
+-- Community: public projects (Explore + Remix) and GitHub export. Public
+-- visibility adds read-only anonymous access to the project row and its
+-- files; chat, secrets, snapshots, and the KV store stay private.
+-- ============================================================================
+
+alter table public.projects
+  add column if not exists visibility text not null default 'private'
+    check (visibility in ('private', 'public'));
+
+-- Last GitHub repo this project was pushed to ("owner/name"), for prefill.
+alter table public.projects
+  add column if not exists github_repo text;
+
+create index if not exists projects_visibility_idx
+  on public.projects(visibility, updated_at desc);
+
+drop policy if exists "projects: public read" on public.projects;
+create policy "projects: public read"
+  on public.projects for select
+  using (visibility = 'public');
+
+drop policy if exists "files: public project read" on public.project_files;
+create policy "files: public project read"
+  on public.project_files for select
+  using (exists (
+    select 1 from public.projects p
+    where p.id = project_id and p.visibility = 'public'
+  ));

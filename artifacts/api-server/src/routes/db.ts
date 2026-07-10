@@ -21,11 +21,11 @@ async function projectIdForToken(
 ): Promise<string | null> {
   if (!/^[0-9a-f-]{36}$/.test(token)) return null;
   const { data } = await supabase
-    .from("projects")
-    .select("id")
-    .eq("db_token", token)
+    .from("project_db_tokens")
+    .select("project_id")
+    .eq("token", token)
     .maybeSingle();
-  return data?.id ?? null;
+  return data?.project_id ?? null;
 }
 
 export const publicDbRouter = Router();

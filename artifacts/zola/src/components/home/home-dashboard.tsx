@@ -4,6 +4,7 @@ import { Link } from "wouter";
 import {
   Search,
   Plus,
+  Compass,
   Download,
   UserPlus,
   Home,
@@ -59,6 +60,7 @@ interface Props {
 const NAV_ITEMS = [
   { icon: Home, label: "Home", href: "/projects", active: true },
   { icon: FolderClosed, label: "Projects", href: "/projects" },
+  { icon: Compass, label: "Explore", href: "/explore" },
   { icon: Globe, label: "Published Projects", href: "/projects" },
   { icon: Blocks, label: "Integrations", href: "/account" },
   { icon: Shield, label: "Security", href: "/account" },

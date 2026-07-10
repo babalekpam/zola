@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/resizable";
 import { apiFetch } from "@/hooks/use-projects";
 import { useSecrets } from "@/hooks/use-secrets";
+import { useFileSync } from "@/hooks/use-file-sync";
 import { createAutoSnapshot } from "@/hooks/use-snapshots";
 import { dbUrlFor } from "@/components/workspace/database-pane";
 import { runtime } from "@/lib/webcontainer/runtime";
@@ -168,6 +169,25 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
     [openFile, project.id, files],
   );
 
+  // Live multiplayer sync: merge collaborators' edits without marking the
+  // buffer dirty (the sender's autosave already persisted them).
+  useFileSync(
+    project.id,
+    files,
+    useCallback((changed, deleted) => {
+      setFiles((prev) => {
+        const next = { ...prev };
+        for (const [path, content] of Object.entries(changed)) {
+          next[path] = content;
+        }
+        for (const path of deleted) delete next[path];
+        return next;
+      });
+      setOpenPaths((prev) => prev.filter((p) => !deleted.includes(p)));
+      setActivePath((cur) => (cur && deleted.includes(cur) ? null : cur));
+    }, []),
+  );
+
   const restoreFiles = useCallback((restored: Record<string, string>) => {
     setFiles(restored);
     const paths = Object.keys(restored);
@@ -313,7 +333,7 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
 
           <ResizablePanel defaultSize={25} minSize={15} className="overflow-hidden">
             <ToolPane
-              projectId={project.id}
+              project={project}
               dbToken={project.db_token ?? null}
               files={files}
               onRestore={restoreFiles}
