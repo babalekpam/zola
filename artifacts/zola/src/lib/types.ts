@@ -6,6 +6,9 @@ export interface Project {
   name: string;
   description: string | null;
   default_model: string;
+  // Capability token routing the app's key-value DB (ZOLA_DB_URL). Optional
+  // because rows predating the migration may not have been re-fetched yet.
+  db_token?: string | null;
   created_at: string;
   updated_at: string;
 }

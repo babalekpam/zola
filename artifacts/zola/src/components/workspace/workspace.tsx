@@ -9,6 +9,7 @@ import { CodeEditor } from "@/components/editor/code-editor";
 import { EditorTabs } from "@/components/editor/editor-tabs";
 import { ToolPane } from "@/components/workspace/tool-pane";
 import { RunButton } from "@/components/workspace/run-button";
+import { PresenceAvatars } from "@/components/workspace/presence-avatars";
 import { ProjectSettings } from "@/components/workspace/project-settings";
 import {
   ResizablePanelGroup,
@@ -17,6 +18,8 @@ import {
 } from "@/components/ui/resizable";
 import { apiFetch } from "@/hooks/use-projects";
 import { useSecrets } from "@/hooks/use-secrets";
+import { createAutoSnapshot } from "@/hooks/use-snapshots";
+import { dbUrlFor } from "@/components/workspace/database-pane";
 import { runtime } from "@/lib/webcontainer/runtime";
 import type { ChatMessage, Project, ProjectFile } from "@/lib/types";
 
@@ -49,10 +52,13 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
   }, [files]);
 
   useEffect(() => {
-    if (secrets) {
-      runtime.setEnv(Object.fromEntries(secrets.map((s) => [s.key, s.value])));
-    }
-  }, [secrets]);
+    const env = Object.fromEntries(
+      (secrets ?? []).map((s) => [s.key, s.value]),
+    );
+    // The app's key-value store rides along like REPLIT_DB_URL does.
+    if (project.db_token) env.ZOLA_DB_URL = dbUrlFor(project.db_token);
+    runtime.setEnv(env);
+  }, [secrets, project.db_token]);
 
   // Auto-run once when the workspace opens, after secrets have loaded (or
   // failed to), so the webview comes up without pressing Run — matching the
@@ -146,6 +152,9 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
 
   const applyFiles = useCallback(
     (incoming: { path: string; content: string }[]) => {
+      // Replit-style safety net: checkpoint the pre-edit state so any AI
+      // change can be rolled back from the History tab.
+      createAutoSnapshot(project.id, "Before AI edit", files);
       setFiles((prev) => {
         const next = { ...prev };
         for (const { path, content } of incoming) {
@@ -156,8 +165,21 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
       if (incoming[0]) openFile(incoming[0].path);
       setDirty(true);
     },
-    [openFile],
+    [openFile, project.id, files],
   );
+
+  const restoreFiles = useCallback((restored: Record<string, string>) => {
+    setFiles(restored);
+    const paths = Object.keys(restored);
+    setOpenPaths((prev) => prev.filter((p) => restored[p] !== undefined));
+    setActivePath((cur) =>
+      cur && restored[cur] !== undefined
+        ? cur
+        : paths.find((p) => p === "src/App.tsx") ?? paths[0] ?? null,
+    );
+    // The restore endpoint already wrote these files server-side.
+    setDirty(false);
+  }, []);
 
   const save = useCallback(async () => {
     if (!dirty) return;
@@ -212,6 +234,7 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
             <ProjectSettings project={project} />
           </div>
           <div className="flex items-center gap-3">
+            <PresenceAvatars projectId={project.id} />
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               {dirty ? "Unsaved changes" : "All changes saved"}
               <button
@@ -289,7 +312,12 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
           <ResizableHandle withHandle />
 
           <ResizablePanel defaultSize={25} minSize={15} className="overflow-hidden">
-            <ToolPane projectId={project.id} />
+            <ToolPane
+              projectId={project.id}
+              dbToken={project.db_token ?? null}
+              files={files}
+              onRestore={restoreFiles}
+            />
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>

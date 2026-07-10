@@ -4,6 +4,8 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import router from "./routes";
+import sitesRouter from "./routes/sites";
+import { publicDbRouter } from "./routes/db";
 import { logger } from "./lib/logger";
 
 const app: Express = express();
@@ -22,6 +24,14 @@ app.use(
   }),
 );
 
+// Public routes mounted before the credentialed CORS policy below:
+// - /db/:token — called by user apps running inside WebContainers (foreign
+//   origins), so CORS must be wide open; access control is the capability token.
+// - /sites/:slug — public deployed sites, plain GETs from anywhere.
+app.use("/db", cors({ origin: true }), express.text({ type: "*/*", limit: "200kb" }));
+app.use(publicDbRouter);
+app.use(sitesRouter);
+
 // CORS: allow the Vite frontend
 const allowedOrigins = [
   process.env.VITE_APP_URL,
@@ -38,7 +48,8 @@ app.use(
 // Raw body for Stripe webhook (must come before express.json())
 app.use("/api/stripe/webhook", express.raw({ type: "application/json" }));
 
-app.use(express.json());
+// 30mb so deployment uploads (built site assets, base64-encoded) fit.
+app.use(express.json({ limit: "30mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 

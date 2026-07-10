@@ -206,6 +206,62 @@ class WebContainerRuntime {
   }
 
   /**
+   * Production build for Deployments: `vite build --base=./` inside the
+   * container (relative base so assets resolve under /sites/:slug/), then read
+   * the dist/ output back out — text files as utf8, binaries as base64.
+   */
+  async buildForDeploy(
+    onLog: (line: string) => void,
+  ): Promise<{ path: string; content: string; encoding: "utf8" | "base64" }[]> {
+    const container = await this.ensureContainer();
+    await container.mount(toMountStructure(this.files));
+
+    onLog("$ npm install\n");
+    const install = await container.spawn("npm", ["install"], { env: this.env });
+    install.output.pipeTo(new WritableStream({ write: (d) => onLog(d) }));
+    if ((await install.exit) !== 0) throw new Error("npm install failed");
+
+    onLog("$ npm run build -- --base=./\n");
+    const build = await container.spawn(
+      "npm",
+      ["run", "build", "--", "--base=./"],
+      { env: this.env },
+    );
+    build.output.pipeTo(new WritableStream({ write: (d) => onLog(d) }));
+    if ((await build.exit) !== 0) throw new Error("Build failed — check the output above");
+
+    const out: { path: string; content: string; encoding: "utf8" | "base64" }[] = [];
+    const walk = async (dir: string, prefix: string) => {
+      const entries = await container.fs.readdir(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const full = `${dir}/${entry.name}`;
+        const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+        if (entry.isDirectory()) {
+          await walk(full, rel);
+        } else {
+          const data = (await container.fs.readFile(full)) as Uint8Array;
+          if (isTextFile(entry.name)) {
+            out.push({ path: rel, content: new TextDecoder().decode(data), encoding: "utf8" });
+          } else {
+            out.push({ path: rel, content: toBase64(data), encoding: "base64" });
+          }
+        }
+      }
+    };
+    try {
+      await walk("dist", "");
+    } catch {
+      throw new Error(
+        "No dist/ output found — this project's build script must emit static files to dist/ to be deployable.",
+      );
+    }
+    if (!out.some((f) => f.path === "index.html")) {
+      throw new Error("Build output has no index.html — only static sites can be deployed.");
+    }
+    return out;
+  }
+
+  /**
    * Interactive login shell for the Shell tab. Caller owns resize + IO wiring;
    * project secrets ride along as process env, matching Replit's shell.
    */
@@ -218,6 +274,25 @@ class WebContainerRuntime {
       env: this.env,
     });
   }
+}
+
+const TEXT_EXTENSIONS = new Set([
+  "html", "js", "mjs", "cjs", "css", "json", "svg", "txt", "xml", "map",
+  "webmanifest", "md", "ts", "tsx", "jsx",
+]);
+
+function isTextFile(name: string): boolean {
+  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+  return TEXT_EXTENSIONS.has(ext);
+}
+
+function toBase64(data: Uint8Array): string {
+  let binary = "";
+  const CHUNK = 0x8000;
+  for (let i = 0; i < data.length; i += CHUNK) {
+    binary += String.fromCharCode(...data.subarray(i, i + CHUNK));
+  }
+  return btoa(binary);
 }
 
 type FileSystemTree = Record<

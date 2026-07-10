@@ -527,6 +527,256 @@ export default function App() {
 `,
     }),
   },
+  {
+    id: "snake",
+    name: "Snake Game",
+    description: "The classic snake game on a canvas — arrow keys to steer.",
+    files: () => ({
+      ...baseFiles(),
+      "src/App.tsx": `import { useEffect, useRef, useState } from "react";
+
+const SIZE = 20;
+const CELLS = 24;
+
+export default function App() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [score, setScore] = useState(0);
+  const [dead, setDead] = useState(false);
+  const [tick, setTick] = useState(0);
+  const state = useRef({
+    snake: [{ x: 12, y: 12 }],
+    dir: { x: 1, y: 0 },
+    food: { x: 5, y: 5 },
+  });
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const d = state.current.dir;
+      if (e.key === "ArrowUp" && d.y === 0) state.current.dir = { x: 0, y: -1 };
+      if (e.key === "ArrowDown" && d.y === 0) state.current.dir = { x: 0, y: 1 };
+      if (e.key === "ArrowLeft" && d.x === 0) state.current.dir = { x: -1, y: 0 };
+      if (e.key === "ArrowRight" && d.x === 0) state.current.dir = { x: 1, y: 0 };
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  useEffect(() => {
+    if (dead) return;
+    const t = setTimeout(() => {
+      const { snake, dir, food } = state.current;
+      const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+      if (
+        head.x < 0 || head.y < 0 || head.x >= CELLS || head.y >= CELLS ||
+        snake.some((s) => s.x === head.x && s.y === head.y)
+      ) {
+        setDead(true);
+        return;
+      }
+      const next = [head, ...snake];
+      if (head.x === food.x && head.y === food.y) {
+        setScore((s) => s + 1);
+        state.current.food = {
+          x: Math.floor(Math.random() * CELLS),
+          y: Math.floor(Math.random() * CELLS),
+        };
+      } else {
+        next.pop();
+      }
+      state.current.snake = next;
+      setTick((n) => n + 1);
+    }, 120);
+    return () => clearTimeout(t);
+  }, [tick, dead]);
+
+  useEffect(() => {
+    const ctx = canvasRef.current?.getContext("2d");
+    if (!ctx) return;
+    ctx.fillStyle = "#0f172a";
+    ctx.fillRect(0, 0, SIZE * CELLS, SIZE * CELLS);
+    ctx.fillStyle = "#f43f5e";
+    const { food, snake } = state.current;
+    ctx.fillRect(food.x * SIZE, food.y * SIZE, SIZE - 1, SIZE - 1);
+    ctx.fillStyle = "#4ade80";
+    for (const s of snake) ctx.fillRect(s.x * SIZE, s.y * SIZE, SIZE - 1, SIZE - 1);
+  }, [tick]);
+
+  return (
+    <main style={{ fontFamily: "system-ui", textAlign: "center", padding: 24 }}>
+      <h1>Snake — {score}</h1>
+      {dead && (
+        <p>
+          Game over.{" "}
+          <button onClick={() => window.location.reload()}>Play again</button>
+        </p>
+      )}
+      <canvas
+        ref={canvasRef}
+        width={SIZE * CELLS}
+        height={SIZE * CELLS}
+        style={{ borderRadius: 12 }}
+      />
+      <p style={{ color: "#64748b" }}>Use the arrow keys.</p>
+    </main>
+  );
+}
+`,
+    }),
+  },
+  {
+    id: "portfolio",
+    name: "Portfolio",
+    description: "A personal portfolio with projects, skills, and contact links.",
+    files: () => ({
+      ...baseFiles(),
+      "src/App.tsx": `const projects = [
+  { name: "Project One", blurb: "A short description of something you built." },
+  { name: "Project Two", blurb: "Another thing you're proud of." },
+  { name: "Project Three", blurb: "Ask the AI to add real links and images." },
+];
+
+export default function App() {
+  return (
+    <main style={{ fontFamily: "system-ui", maxWidth: 720, margin: "0 auto", padding: "64px 24px", color: "#111" }}>
+      <header style={{ marginBottom: 48 }}>
+        <h1 style={{ fontSize: 40, margin: 0 }}>Your Name</h1>
+        <p style={{ fontSize: 18, color: "#555" }}>
+          Developer · Designer · Maker. Replace this with your one-line bio.
+        </p>
+        <p>
+          <a href="mailto:you@example.com">Email</a> ·{" "}
+          <a href="https://github.com">GitHub</a> ·{" "}
+          <a href="https://linkedin.com">LinkedIn</a>
+        </p>
+      </header>
+      <section>
+        <h2>Projects</h2>
+        <div style={{ display: "grid", gap: 16 }}>
+          {projects.map((p) => (
+            <div key={p.name} style={{ border: "1px solid #eee", borderRadius: 12, padding: 20 }}>
+              <h3 style={{ margin: "0 0 8px" }}>{p.name}</h3>
+              <p style={{ margin: 0, color: "#555" }}>{p.blurb}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    </main>
+  );
+}
+`,
+    }),
+  },
+  {
+    id: "blog",
+    name: "Blog",
+    description: "A minimal blog with a post list and reading view.",
+    files: () => ({
+      ...baseFiles(),
+      "src/App.tsx": `import { useState } from "react";
+
+const posts = [
+  {
+    slug: "hello-world",
+    title: "Hello, world",
+    date: "2026-01-05",
+    body: "This is your first post. Ask the AI to add markdown support, tags, or a CMS.",
+  },
+  {
+    slug: "second-post",
+    title: "Why I'm building in public",
+    date: "2026-02-12",
+    body: "Write about anything here. Each post is just data — edit the posts array in App.tsx.",
+  },
+];
+
+export default function App() {
+  const [open, setOpen] = useState<string | null>(null);
+  const post = posts.find((p) => p.slug === open);
+
+  return (
+    <main style={{ fontFamily: "Georgia, serif", maxWidth: 640, margin: "0 auto", padding: "56px 24px" }}>
+      <h1 style={{ fontFamily: "system-ui" }}>My Blog</h1>
+      {post ? (
+        <article>
+          <button onClick={() => setOpen(null)} style={{ marginBottom: 16 }}>← All posts</button>
+          <h2>{post.title}</h2>
+          <p style={{ color: "#888", fontFamily: "system-ui", fontSize: 14 }}>{post.date}</p>
+          <p style={{ lineHeight: 1.7 }}>{post.body}</p>
+        </article>
+      ) : (
+        <ul style={{ listStyle: "none", padding: 0, display: "grid", gap: 20 }}>
+          {posts.map((p) => (
+            <li key={p.slug}>
+              <a
+                href="#"
+                onClick={(e) => { e.preventDefault(); setOpen(p.slug); }}
+                style={{ fontSize: 22, color: "#111" }}
+              >
+                {p.title}
+              </a>
+              <div style={{ color: "#888", fontFamily: "system-ui", fontSize: 14 }}>{p.date}</div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </main>
+  );
+}
+`,
+    }),
+  },
+  {
+    id: "express-api",
+    name: "Express API",
+    description: "A Node.js REST API with Express — JSON endpoints, no frontend.",
+    files: () => ({
+      "package.json": JSON.stringify(
+        {
+          name: "zola-express-api",
+          private: true,
+          type: "module",
+          scripts: { dev: "node server.js" },
+          dependencies: { express: "^4.19.0" },
+        },
+        null,
+        2,
+      ),
+      "server.js": `import express from "express";
+
+const app = express();
+app.use(express.json());
+
+let todos = [{ id: 1, text: "Try this API from the Shell with curl", done: false }];
+
+app.get("/", (_req, res) => {
+  res.json({ ok: true, endpoints: ["GET /todos", "POST /todos", "DELETE /todos/:id"] });
+});
+
+app.get("/todos", (_req, res) => res.json(todos));
+
+app.post("/todos", (req, res) => {
+  const todo = { id: Date.now(), text: req.body.text ?? "", done: false };
+  todos.push(todo);
+  res.status(201).json(todo);
+});
+
+app.delete("/todos/:id", (req, res) => {
+  todos = todos.filter((t) => t.id !== Number(req.params.id));
+  res.status(204).end();
+});
+
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log(\`API listening on \${port}\`));
+`,
+      "README.md": `# Express API
+
+Run it, then try from the Shell tab:
+
+    curl localhost:3000/todos
+    curl -X POST localhost:3000/todos -H 'content-type: application/json' -d '{"text":"hi"}'
+`,
+    }),
+  },
 ];
 
 export default router;

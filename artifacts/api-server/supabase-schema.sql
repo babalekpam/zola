@@ -616,3 +616,99 @@ create policy "secrets: via project"
   on public.project_secrets for all
   using (public.has_project_access(project_id))
   with check (public.has_project_access(project_id));
+
+-- ============================================================================
+-- Version control (checkpoints), Deployments, and the key-value Database —
+-- the Replit-parity workspace tools. Checkpoints snapshot the full file tree
+-- as jsonb; deployments store built static output served at /sites/:slug;
+-- project_kv backs the Replit-DB-style store the running app reaches through
+-- its ZOLA_DB_URL env var (routed by db_token, no user auth).
+-- ============================================================================
+
+create table if not exists public.project_snapshots (
+  id         uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  label      text not null default '',
+  kind       text not null default 'manual' check (kind in ('manual', 'auto')),
+  files      jsonb not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists project_snapshots_project_idx
+  on public.project_snapshots(project_id, created_at desc);
+
+alter table public.project_snapshots enable row level security;
+
+drop policy if exists "snapshots: via project" on public.project_snapshots;
+create policy "snapshots: via project"
+  on public.project_snapshots for all
+  using (public.has_project_access(project_id))
+  with check (public.has_project_access(project_id));
+
+create table if not exists public.deployments (
+  id         uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  slug       text not null,
+  status     text not null default 'live',
+  file_count int  not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists deployments_project_idx
+  on public.deployments(project_id, created_at desc);
+create index if not exists deployments_slug_idx
+  on public.deployments(slug, created_at desc);
+
+create table if not exists public.deployment_files (
+  id            uuid primary key default gen_random_uuid(),
+  deployment_id uuid not null references public.deployments(id) on delete cascade,
+  path          text not null,
+  content       text not null,
+  encoding      text not null default 'utf8' check (encoding in ('utf8', 'base64')),
+  unique (deployment_id, path)
+);
+
+alter table public.deployments enable row level security;
+alter table public.deployment_files enable row level security;
+
+-- Owners/members manage deployments through their JWT; the public /sites/:slug
+-- serving route reads via the service role, which bypasses RLS by design.
+drop policy if exists "deployments: via project" on public.deployments;
+create policy "deployments: via project"
+  on public.deployments for all
+  using (public.has_project_access(project_id))
+  with check (public.has_project_access(project_id));
+
+drop policy if exists "deployment files: via project" on public.deployment_files;
+create policy "deployment files: via project"
+  on public.deployment_files for all
+  using (exists (
+    select 1 from public.deployments d
+    where d.id = deployment_id and public.has_project_access(d.project_id)
+  ))
+  with check (exists (
+    select 1 from public.deployments d
+    where d.id = deployment_id and public.has_project_access(d.project_id)
+  ));
+
+-- Per-project capability token the running app uses to reach its database.
+alter table public.projects
+  add column if not exists db_token uuid not null default gen_random_uuid();
+
+create unique index if not exists projects_db_token_idx on public.projects(db_token);
+
+create table if not exists public.project_kv (
+  project_id uuid not null references public.projects(id) on delete cascade,
+  key        text not null,
+  value      text not null,
+  updated_at timestamptz not null default now(),
+  primary key (project_id, key)
+);
+
+alter table public.project_kv enable row level security;
+
+drop policy if exists "kv: via project" on public.project_kv;
+create policy "kv: via project"
+  on public.project_kv for all
+  using (public.has_project_access(project_id))
+  with check (public.has_project_access(project_id));

@@ -1,6 +1,6 @@
-# [Project name]
+# Zola
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Zola is a Replit-style, AI-first coding platform: users describe an app in chat, an AI agent writes the code, and the project runs live in an in-browser Node.js sandbox (WebContainers) with a full workspace — editor, shell, console, secrets, key-value database, checkpoints, and one-click deployments.
 
 ## Run & Operate
 
@@ -9,37 +9,57 @@ _Replace the heading above with the project's name, and this line with one sente
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Required env: `DATABASE_URL` — Postgres connection string; Supabase: `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` (or `NEXT_PUBLIC_*`), `SUPABASE_SERVICE_ROLE_KEY` (deployments/DB serving, org writes)
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
 - API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- DB: Supabase (Postgres + RLS + Realtime); schema source of truth: `artifacts/api-server/supabase-schema.sql` (idempotent, re-runnable)
+- Frontend: Vite + React, Tailwind, shadcn/ui, TanStack Query, wouter, Monaco, xterm.js
+- In-browser runtime: StackBlitz WebContainers (`@webcontainer/api`)
+- AI: Vercel AI SDK v4 generation (`ai@4` + `@ai-sdk/react@1` + providers pinned to the same generation — see .agents/memory)
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/zola` — the main web app.
+  - `src/lib/webcontainer/runtime.ts` — singleton WebContainer lifecycle owner (Run/Stop/Restart, console stream, shell spawning, deploy builds, env injection)
+  - `src/components/workspace/` — workspace UI: `workspace.tsx` (layout + state), `tool-pane.tsx` (Webview/Console/Shell/Secrets/DB/History/Deploy tabs), one file per pane
+  - `src/components/chat/` — AI chat (Loop agent); `src/components/editor/` — file tree, Monaco, tabs
+  - `src/hooks/` — TanStack Query hooks per API resource (`use-secrets`, `use-snapshots`, `use-deployments`, `use-kv`, `use-presence`, …)
+- `artifacts/api-server` — Express API.
+  - `src/routes/` — one router per resource; registered in `routes/index.ts` under `/api`
+  - Public unauthenticated routes mounted at app level in `app.ts`: `/sites/:slug/*` (deployed sites) and `/db/:token/*` (key-value store for running apps, open CORS)
+  - `supabase-schema.sql` — append-only, idempotent schema + RLS; apply to Supabase via the pooler (see .agents/memory)
+- `artifacts/zola-mobile`, `artifacts/mockup-sandbox` — secondary artifacts
+- `lib/` — shared API spec/codegen packages
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- All project data access goes through Supabase RLS with the `has_project_access(project_id)` helper; the API server uses the user's JWT (cookies) except where a service role is required (public site serving, token-routed KV, org writes).
+- The WebContainer is a per-page singleton (`runtime` in `lib/webcontainer/runtime.ts`); panes subscribe to it rather than owning container state, so tab switches never restart anything. Panes stay mounted (CSS-hidden) once opened.
+- Deployments store built static output in Postgres (`deployment_files`, base64 for binaries) and serve at `/sites/:slug/` with SPA fallback; builds run client-side in the WebContainer with `--base=./`.
+- The app key-value DB mirrors Replit DB: a capability token (`projects.db_token`) in `ZOLA_DB_URL` is the only auth; CORS is open on `/db` because calls come from WebContainer origins.
+- A snapshot of all files is auto-saved before every AI edit (`project_snapshots`, capped at 50/project) so any agent change can be rolled back from the History tab.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Home dashboard: create from templates (todo, landing, dashboard, snake, portfolio, blog, Express API), import from GitHub, attach reference docs (PDF/Word), organizations/workspaces, referrals, billing (Stripe).
+- Workspace: AI chat (multi-model, plan mode, voice input), file tree + Monaco editor, Run/Stop/Restart, Webview with address bar, Console, interactive Shell, Secrets, key-value Database, History (checkpoints + restore), Deploy (public static hosting), live presence avatars.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- The product goal is feature parity with Replit ("a perfect clone of Replit") — when in doubt, match Replit's workspace behavior and naming.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- `supabase-schema.sql` changes must be applied to the live Supabase project manually (pooler connection; direct host is IPv6-only). New tables since last apply: `project_secrets`, `project_snapshots`, `deployments`, `deployment_files`, `project_kv`, and `projects.db_token`.
+- WebContainer needs cross-origin isolation (COOP/COEP headers in `vite.config.ts`) and an API key (`VITE_WEBCONTAINER_API_KEY`) on non-localhost origins.
+- Express 5 route syntax: wildcards are named (`/sites/:slug{/*splat}`); `*splat` alone requires ≥1 segment.
+- `express.json` limit is raised to 30 MB for deployment uploads; `/db` uses `express.text` and is mounted before the credentialed CORS policy.
+- Keep every AI SDK package on the same generation (see `.agents/memory/ai-sdk-version-alignment.md`).
 
 ## Pointers
 
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- `.agents/memory/MEMORY.md` — hard-won operational notes (RLS traps, WebContainer licensing, schema apply procedure)
