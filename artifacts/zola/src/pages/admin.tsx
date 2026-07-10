@@ -75,7 +75,7 @@ export default function AdminPage() {
     { icon: Building2, label: "Workspaces", value: stats.orgs, sub: null },
     { icon: Globe, label: "Projects", value: stats.projects, sub: `+${stats.newProjects7d} this week` },
     { icon: Rocket, label: "Deployments", value: stats.deployments, sub: `${stats.domains} custom domains` },
-    { icon: MessageSquare, label: "AI messages", value: stats.messages, sub: null },
+    { icon: MessageSquare, label: "AI messages", value: stats.messages, sub: `${stats.aiRequests7d} model calls this week` },
     { icon: Globe, label: "Public apps", value: stats.publicProjects, sub: "on Explore" },
   ];
 

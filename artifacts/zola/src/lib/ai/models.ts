@@ -1,10 +1,15 @@
 // Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 export type ProviderId =
+  | "auto"
   | "anthropic"
   | "openai"
   | "google"
   | "openrouter"
-  | "nvidia";
+  | "nvidia"
+  | "groq"
+  | "deepseek"
+  | "qwen"
+  | "moonshot";
 
 export interface ModelDescriptor {
   id: string;
@@ -16,6 +21,13 @@ export interface ModelDescriptor {
 }
 
 export const MODELS: ModelDescriptor[] = [
+  {
+    id: "auto",
+    label: "Auto (recommended)",
+    provider: "auto",
+    modelId: "auto",
+    description: "Routes each request to the best model for the task — design, coding, planning, or quick edits",
+  },
   {
     id: "claude-opus-4-8",
     label: "Claude Opus 4.8",
@@ -136,9 +148,58 @@ export const MODELS: ModelDescriptor[] = [
     description: "NVIDIA-tuned Llama, strong general-purpose",
     contextWindow: 128_000,
   },
+  {
+    id: "groq-kimi-k2",
+    label: "Kimi K2 (Groq)",
+    provider: "groq",
+    modelId: "moonshotai/kimi-k2-instruct",
+    description: "Kimi K2 on Groq's ultra-fast inference",
+  },
+  {
+    id: "groq-llama-3.3-70b",
+    label: "Llama 3.3 70B (Groq)",
+    provider: "groq",
+    modelId: "llama-3.3-70b-versatile",
+    description: "Fast open-weights workhorse",
+  },
+  {
+    id: "deepseek-chat",
+    label: "DeepSeek V3",
+    provider: "deepseek",
+    modelId: "deepseek-chat",
+    description: "Strong coding at low cost",
+  },
+  {
+    id: "deepseek-reasoner",
+    label: "DeepSeek R1 (Reasoner)",
+    provider: "deepseek",
+    modelId: "deepseek-reasoner",
+    description: "Deep reasoning for hard problems",
+  },
+  {
+    id: "qwen3-coder",
+    label: "Qwen3 Coder",
+    provider: "qwen",
+    modelId: "qwen3-coder-plus",
+    description: "Alibaba's dedicated coding model",
+  },
+  {
+    id: "qwen-max",
+    label: "Qwen Max",
+    provider: "qwen",
+    modelId: "qwen-max",
+    description: "Alibaba's flagship",
+  },
+  {
+    id: "kimi-k2",
+    label: "Kimi K2",
+    provider: "moonshot",
+    modelId: "kimi-k2-turbo-preview",
+    description: "Moonshot's agentic model, direct",
+  },
 ];
 
-export const DEFAULT_MODEL_ID = "nvidia-qwen-coder-32b";
+export const DEFAULT_MODEL_ID = "auto";
 
 export function getModelById(id: string): ModelDescriptor | undefined {
   return MODELS.find((m) => m.id === id);

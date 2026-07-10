@@ -3,12 +3,44 @@ import express, { type Express } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
+import rateLimit from "express-rate-limit";
 import router from "./routes";
 import sitesRouter, { customDomainMiddleware } from "./routes/sites";
 import { publicDbRouter } from "./routes/db";
 import { logger } from "./lib/logger";
 
 const app: Express = express();
+
+// Correct client IPs for rate limiting behind the platform proxy / Cloud Run.
+app.set("trust proxy", 1);
+
+// Baseline security headers on every response (platform pages, API, sites).
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("X-DNS-Prefetch-Control", "off");
+  next();
+});
+
+// Per-IP flood control. Generous global ceiling; tighter on the public
+// key-value API (token-authed, reachable from any origin by design).
+app.use(
+  rateLimit({
+    windowMs: 60_000,
+    limit: 600,
+    standardHeaders: true,
+    legacyHeaders: false,
+  }),
+);
+app.use(
+  "/db",
+  rateLimit({
+    windowMs: 60_000,
+    limit: 120,
+    standardHeaders: true,
+    legacyHeaders: false,
+  }),
+);
 
 app.use(
   pinoHttp({

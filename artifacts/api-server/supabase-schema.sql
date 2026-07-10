@@ -818,3 +818,30 @@ create policy "domains: via project"
   on public.custom_domains for all
   using (public.has_project_access(project_id))
   with check (public.has_project_access(project_id));
+
+-- ============================================================================
+-- AI usage metering: one row per model call (chat, swarm architect, swarm
+-- worker). Powers monthly plan quotas and the admin usage stats. Writes are
+-- service-role only; users can read their own usage.
+-- ============================================================================
+
+create table if not exists public.ai_usage (
+  id                uuid primary key default gen_random_uuid(),
+  user_id           uuid not null references auth.users(id) on delete cascade,
+  org_id            uuid references public.organizations(id) on delete set null,
+  project_id        uuid references public.projects(id) on delete set null,
+  model_id          text not null,
+  kind              text not null default 'chat',
+  prompt_tokens     integer not null default 0,
+  completion_tokens integer not null default 0,
+  created_at        timestamptz not null default now()
+);
+
+create index if not exists ai_usage_user_month_idx on public.ai_usage(user_id, created_at desc);
+create index if not exists ai_usage_org_month_idx on public.ai_usage(org_id, created_at desc);
+
+alter table public.ai_usage enable row level security;
+
+drop policy if exists "ai usage: self read" on public.ai_usage;
+create policy "ai usage: self read"
+  on public.ai_usage for select using (auth.uid() = user_id);

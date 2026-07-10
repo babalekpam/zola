@@ -78,12 +78,17 @@ router.get("/admin/stats", async (req, res) => {
       countOf(admin, "messages"),
       countOf(admin, "custom_domains"),
     ]);
-  const [{ count: publicProjects }, { count: newUsers7d }, { count: newProjects7d }] =
-    await Promise.all([
-      admin.from("projects").select("*", { count: "exact", head: true }).eq("visibility", "public"),
-      admin.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", since),
-      admin.from("projects").select("*", { count: "exact", head: true }).gte("created_at", since),
-    ]);
+  const [
+    { count: publicProjects },
+    { count: newUsers7d },
+    { count: newProjects7d },
+    { count: aiRequests7d },
+  ] = await Promise.all([
+    admin.from("projects").select("*", { count: "exact", head: true }).eq("visibility", "public"),
+    admin.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", since),
+    admin.from("projects").select("*", { count: "exact", head: true }).gte("created_at", since),
+    admin.from("ai_usage").select("*", { count: "exact", head: true }).gte("created_at", since),
+  ]);
 
   res.json({
     stats: {
@@ -96,6 +101,7 @@ router.get("/admin/stats", async (req, res) => {
       publicProjects: publicProjects ?? 0,
       newUsers7d: newUsers7d ?? 0,
       newProjects7d: newProjects7d ?? 0,
+      aiRequests7d: aiRequests7d ?? 0,
     },
   });
 });

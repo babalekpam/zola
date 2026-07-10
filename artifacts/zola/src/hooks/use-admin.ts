@@ -12,6 +12,7 @@ export interface PlatformStats {
   publicProjects: number;
   newUsers7d: number;
   newProjects7d: number;
+  aiRequests7d: number;
 }
 
 export interface AdminUser {

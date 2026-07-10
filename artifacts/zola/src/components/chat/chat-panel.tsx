@@ -26,6 +26,10 @@ export function ChatPanel({ projectId, files, initialMessages, onApplyFiles }: P
     if (typeof window === "undefined") return true;
     return localStorage.getItem("loop_plan_mode") !== "false";
   });
+  const [swarmMode, setSwarmMode] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("loop_swarm_mode") === "true";
+  });
   const [recording, setRecording] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastAppliedRef = useRef<string>("");
@@ -37,9 +41,13 @@ export function ChatPanel({ projectId, files, initialMessages, onApplyFiles }: P
     localStorage.setItem("loop_plan_mode", String(planMode));
   }, [planMode]);
 
+  useEffect(() => {
+    localStorage.setItem("loop_swarm_mode", String(swarmMode));
+  }, [swarmMode]);
+
   const { messages, input, setInput, handleInputChange, handleSubmit, status, error } = useChat({
     api: `${API_URL}/api/chat`,
-    body: { modelId, projectFiles: files, projectId, planMode },
+    body: { modelId, projectFiles: files, projectId, planMode, swarmMode },
     id: projectId,
     credentials: "include",
     initialMessages: (initialMessages ?? [])
@@ -188,6 +196,24 @@ export function ChatPanel({ projectId, files, initialMessages, onApplyFiles }: P
                   )}
                 />
                 Plan
+              </button>
+              <button
+                type="button"
+                onClick={() => setSwarmMode((v) => !v)}
+                aria-pressed={swarmMode}
+                title={
+                  swarmMode
+                    ? "Swarm mode — an architect splits the work across parallel specialist agents, each on the best model for its task. Turn off for a single agent."
+                    : "Single agent. Turn on Swarm to fan the work out across parallel specialist agents for big builds."
+                }
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                  swarmMode
+                    ? "border-amber-500 bg-amber-500/10 text-foreground ring-1 ring-amber-500"
+                    : "border-border text-muted-foreground hover:bg-accent",
+                )}
+              >
+                🐝 Swarm
               </button>
               <button
                 type="button"
