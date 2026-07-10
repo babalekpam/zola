@@ -792,3 +792,29 @@ drop policy if exists "likes: delete own" on public.project_likes;
 create policy "likes: delete own"
   on public.project_likes for delete
   using (auth.uid() = user_id);
+
+-- ============================================================================
+-- Custom domains: an organization links its own domain to a project's
+-- deployment. Ownership is proven via a DNS TXT challenge; once verified,
+-- the API serves that project's live deployment for requests whose Host
+-- header matches (TLS termination is handled by the fronting infra).
+-- ============================================================================
+
+create table if not exists public.custom_domains (
+  id         uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  domain     text not null unique,
+  token      uuid not null default gen_random_uuid(),
+  verified   boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists custom_domains_project_idx on public.custom_domains(project_id);
+
+alter table public.custom_domains enable row level security;
+
+drop policy if exists "domains: via project" on public.custom_domains;
+create policy "domains: via project"
+  on public.custom_domains for all
+  using (public.has_project_access(project_id))
+  with check (public.has_project_access(project_id));

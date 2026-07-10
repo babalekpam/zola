@@ -4,7 +4,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import router from "./routes";
-import sitesRouter from "./routes/sites";
+import sitesRouter, { customDomainMiddleware } from "./routes/sites";
 import { publicDbRouter } from "./routes/db";
 import { logger } from "./lib/logger";
 
@@ -23,6 +23,12 @@ app.use(
     },
   }),
 );
+
+// Verified custom domains serve their project's live deployment directly —
+// checked first so an org's own domain never falls through to platform routes.
+app.use((req, res, next) => {
+  void customDomainMiddleware(req, res, next);
+});
 
 // Public routes mounted before the credentialed CORS policy below:
 // - /db/:token — called by user apps running inside WebContainers (foreign

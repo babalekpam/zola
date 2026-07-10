@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 import { useRef, useState } from "react";
-import { ExternalLink, Globe, Rocket } from "lucide-react";
+import { Check, Copy, ExternalLink, Globe, Link2, Rocket, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   useDeployments,
@@ -8,7 +8,14 @@ import {
   siteUrl,
 } from "@/hooks/use-deployments";
 import { runtime } from "@/lib/webcontainer/runtime";
+import {
+  useDomains,
+  useAddDomain,
+  useVerifyDomain,
+  useDeleteDomain,
+} from "@/hooks/use-domains";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 function timeAgo(iso: string): string {
   const s = Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
@@ -105,6 +112,8 @@ export function DeployPane({ projectId }: { projectId: string }) {
           </pre>
         )}
 
+        {current && <DomainsSection projectId={projectId} />}
+
         <div className="mt-4">
           <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
             History
@@ -139,6 +148,123 @@ export function DeployPane({ projectId }: { projectId: string }) {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Link an organization's own domain to this deployment, Replit-style. */
+function DomainsSection({ projectId }: { projectId: string }) {
+  const { data: domains } = useDomains(projectId);
+  const add = useAddDomain(projectId);
+  const verify = useVerifyDomain(projectId);
+  const remove = useDeleteDomain(projectId);
+  const [draft, setDraft] = useState("");
+  const platformHost = (() => {
+    try {
+      const api = import.meta.env.VITE_API_URL as string | undefined;
+      return new URL(api || window.location.origin).host;
+    } catch {
+      return window.location.host;
+    }
+  })();
+
+  function submit() {
+    const domain = draft.trim();
+    if (!domain) return;
+    add.mutate(domain, {
+      onSuccess: () => setDraft(""),
+      onError: (err) => toast.error(err.message),
+    });
+  }
+
+  return (
+    <div className="mt-4">
+      <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        Custom domains
+      </div>
+      <div className="flex items-center gap-2">
+        <Input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && submit()}
+          placeholder="app.yourdomain.com"
+          className="h-8 font-mono text-xs"
+        />
+        <Button size="sm" variant="outline" onClick={submit} disabled={add.isPending}>
+          <Link2 className="mr-1 h-3.5 w-3.5" /> Link
+        </Button>
+      </div>
+
+      {domains?.map((d) => (
+        <div key={d.id} className="mt-2 rounded-md border border-border p-2.5">
+          <div className="flex items-center gap-2">
+            <span className="min-w-0 flex-1 truncate font-mono text-xs font-medium">
+              {d.domain}
+            </span>
+            {d.verified ? (
+              <span className="flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-medium text-green-600">
+                <ShieldCheck className="h-3 w-3" /> Live
+              </span>
+            ) : (
+              <span className="rounded-full bg-yellow-500/10 px-2 py-0.5 text-[10px] font-medium text-yellow-600">
+                Pending DNS
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() =>
+                remove.mutate(d.id, { onError: (err) => toast.error(err.message) })
+              }
+              className="rounded p-1 text-muted-foreground hover:text-destructive"
+              title="Remove domain"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          {!d.verified && (
+            <div className="mt-2 space-y-1.5 text-[11px] leading-relaxed text-muted-foreground">
+              <p>Add these DNS records at your registrar:</p>
+              <div className="rounded bg-muted/40 p-2 font-mono text-[10px]">
+                <div className="flex items-center gap-1">
+                  <span className="min-w-0 flex-1 truncate">
+                    TXT&nbsp; _zola-challenge.{d.domain} = {d.token}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void navigator.clipboard.writeText(d.token);
+                      toast.success("Token copied");
+                    }}
+                    className="rounded p-0.5 text-muted-foreground hover:text-foreground"
+                    title="Copy token"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </button>
+                </div>
+                <div className="mt-1 truncate">
+                  CNAME {d.domain} → {platformHost}
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 w-full text-xs"
+                onClick={() =>
+                  verify.mutate(d.id, {
+                    onSuccess: () => toast.success(`${d.domain} is live`),
+                    onError: (err) => toast.error(err.message),
+                  })
+                }
+                disabled={verify.isPending}
+              >
+                <Check className="mr-1 h-3 w-3" />
+                {verify.isPending ? "Checking DNS…" : "Verify"}
+              </Button>
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
