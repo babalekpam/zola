@@ -43,6 +43,7 @@ export interface Sample {
   id: string;
   name: string;
   description: string;
+  category: string;
 }
 
 export function useSamples() {

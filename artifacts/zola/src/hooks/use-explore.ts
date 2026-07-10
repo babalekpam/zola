@@ -8,6 +8,8 @@ export interface PublicProject {
   name: string;
   description: string | null;
   updated_at: string;
+  likes: number;
+  liked: boolean;
 }
 
 export function useExplore(q: string) {
@@ -20,13 +22,44 @@ export function useExplore(q: string) {
   });
 }
 
+/** Like/unlike with optimistic toggle across all cached explore queries. */
+export function useLikeProject() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ projectId, liked }: { projectId: string; liked: boolean }) =>
+      apiFetch<{ ok: boolean }>(`/api/projects/${projectId}/like`, {
+        method: liked ? "DELETE" : "POST",
+        ...(liked ? {} : { body: JSON.stringify({}) }),
+      }),
+    onMutate: async ({ projectId, liked }) => {
+      await qc.cancelQueries({ queryKey: ["explore"] });
+      qc.setQueriesData<PublicProject[]>({ queryKey: ["explore"] }, (old) =>
+        old?.map((p) =>
+          p.id === projectId
+            ? { ...p, liked: !liked, likes: p.likes + (liked ? -1 : 1) }
+            : p,
+        ),
+      );
+    },
+    onError: () => {
+      void qc.invalidateQueries({ queryKey: ["explore"] });
+    },
+  });
+}
+
 export function useForkProject() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (projectId: string) =>
+    mutationFn: ({
+      projectId,
+      orgId,
+    }: {
+      projectId: string;
+      orgId?: string | null;
+    }) =>
       apiFetch<{ project: Project }>(`/api/projects/${projectId}/fork`, {
         method: "POST",
-        body: JSON.stringify({}),
+        body: JSON.stringify(orgId ? { org_id: orgId } : {}),
       }).then((d) => d.project),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["projects"] }),
   });

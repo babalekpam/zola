@@ -185,10 +185,11 @@ router.post("/projects", async (req, res) => {
 
 router.get("/projects/samples", (_req, res) => {
   res.json({
-    samples: SAMPLE_PROJECTS.map(({ id, name, description }) => ({
+    samples: SAMPLE_PROJECTS.map(({ id, name, description, category }) => ({
       id,
       name,
       description,
+      category,
     })),
   });
 });
@@ -407,12 +408,14 @@ interface Sample {
   id: string;
   name: string;
   description: string;
+  category: string;
   files: () => Record<string, string>;
 }
 
 const SAMPLE_PROJECTS: Sample[] = [
   {
     id: "todo",
+    category: "Apps",
     name: "Todo App",
     description: "A clean React to-do list with add, complete, and delete.",
     files: () => ({
@@ -486,6 +489,7 @@ export default function App() {
   },
   {
     id: "landing",
+    category: "Websites",
     name: "Landing Page",
     description: "A modern product landing page with a hero and feature grid.",
     files: () => ({
@@ -524,6 +528,7 @@ export default function App() {
   },
   {
     id: "dashboard",
+    category: "Data",
     name: "Analytics Dashboard",
     description: "A simple stats dashboard with metric cards and a recent list.",
     files: () => ({
@@ -571,6 +576,7 @@ export default function App() {
   },
   {
     id: "snake",
+    category: "Games",
     name: "Snake Game",
     description: "The classic snake game on a canvas — arrow keys to steer.",
     files: () => ({
@@ -667,6 +673,7 @@ export default function App() {
   },
   {
     id: "portfolio",
+    category: "Websites",
     name: "Portfolio",
     description: "A personal portfolio with projects, skills, and contact links.",
     files: () => ({
@@ -710,6 +717,7 @@ export default function App() {
   },
   {
     id: "blog",
+    category: "Websites",
     name: "Blog",
     description: "A minimal blog with a post list and reading view.",
     files: () => ({
@@ -769,6 +777,7 @@ export default function App() {
   },
   {
     id: "express-api",
+    category: "Backends",
     name: "Express API",
     description: "A Node.js REST API with Express — JSON endpoints, no frontend.",
     files: () => ({
@@ -816,6 +825,257 @@ Run it, then try from the Shell tab:
 
     curl localhost:3000/todos
     curl -X POST localhost:3000/todos -H 'content-type: application/json' -d '{"text":"hi"}'
+`,
+    }),
+  },
+  {
+    id: "calculator",
+    name: "Calculator",
+    description: "A clean working calculator with keyboard support.",
+    category: "Apps",
+    files: () => ({
+      ...baseFiles(),
+      "src/App.tsx": `import { useEffect, useState } from "react";
+
+const KEYS = ["7","8","9","/","4","5","6","*","1","2","3","-","0",".","=","+"];
+
+export default function App() {
+  const [expr, setExpr] = useState("");
+
+  function press(k: string) {
+    if (k === "=") {
+      try {
+        if (!/^[0-9+\\-*/. ()]+$/.test(expr)) return;
+        // eslint-disable-next-line no-new-func
+        setExpr(String(Function("return (" + expr + ")")()));
+      } catch {
+        setExpr("Error");
+      }
+      return;
+    }
+    setExpr((e) => (e === "Error" ? k : e + k));
+  }
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (KEYS.includes(e.key)) press(e.key);
+      if (e.key === "Enter") press("=");
+      if (e.key === "Backspace") setExpr((x) => x.slice(0, -1));
+      if (e.key === "Escape") setExpr("");
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  return (
+    <main style={{ fontFamily: "system-ui", maxWidth: 280, margin: "64px auto" }}>
+      <div style={{ background: "#0f172a", color: "#fff", borderRadius: 12, padding: 16 }}>
+        <div style={{ minHeight: 40, fontSize: 24, textAlign: "right", overflowWrap: "anywhere" }}>
+          {expr || "0"}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginTop: 12 }}>
+          {KEYS.map((k) => (
+            <button
+              key={k}
+              onClick={() => press(k)}
+              style={{ padding: "14px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 16, background: k === "=" ? "#4ade80" : "#1e293b", color: k === "=" ? "#0f172a" : "#fff" }}
+            >
+              {k}
+            </button>
+          ))}
+        </div>
+        <button onClick={() => setExpr("")} style={{ width: "100%", marginTop: 8, padding: 10, borderRadius: 8, border: "none", cursor: "pointer", background: "#334155", color: "#fff" }}>
+          Clear
+        </button>
+      </div>
+    </main>
+  );
+}
+`,
+    }),
+  },
+  {
+    id: "pomodoro",
+    name: "Pomodoro Timer",
+    description: "A focus timer with work/break cycles and desktop-friendly UI.",
+    category: "Apps",
+    files: () => ({
+      ...baseFiles(),
+      "src/App.tsx": `import { useEffect, useState } from "react";
+
+const WORK = 25 * 60;
+const BREAK = 5 * 60;
+
+export default function App() {
+  const [secs, setSecs] = useState(WORK);
+  const [running, setRunning] = useState(false);
+  const [mode, setMode] = useState<"work" | "break">("work");
+
+  useEffect(() => {
+    if (!running) return;
+    const t = setInterval(() => {
+      setSecs((s) => {
+        if (s > 1) return s - 1;
+        setMode((m) => (m === "work" ? "break" : "work"));
+        return mode === "work" ? BREAK : WORK;
+      });
+    }, 1000);
+    return () => clearInterval(t);
+  }, [running, mode]);
+
+  const mm = String(Math.floor(secs / 60)).padStart(2, "0");
+  const ss = String(secs % 60).padStart(2, "0");
+
+  return (
+    <main style={{ fontFamily: "system-ui", textAlign: "center", padding: 64, background: mode === "work" ? "#fef2f2" : "#eff6ff", minHeight: "100vh" }}>
+      <h1 style={{ letterSpacing: 2, textTransform: "uppercase", fontSize: 14, color: "#666" }}>
+        {mode === "work" ? "Focus" : "Break"}
+      </h1>
+      <div style={{ fontSize: 96, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+        {mm}:{ss}
+      </div>
+      <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 24 }}>
+        <button onClick={() => setRunning((r) => !r)} style={{ padding: "12px 32px", borderRadius: 999, border: "none", cursor: "pointer", background: "#0f172a", color: "#fff", fontSize: 16 }}>
+          {running ? "Pause" : "Start"}
+        </button>
+        <button onClick={() => { setRunning(false); setMode("work"); setSecs(WORK); }} style={{ padding: "12px 24px", borderRadius: 999, border: "1px solid #ccc", cursor: "pointer", background: "#fff", fontSize: 16 }}>
+          Reset
+        </button>
+      </div>
+    </main>
+  );
+}
+`,
+    }),
+  },
+  {
+    id: "quiz",
+    name: "Quiz App",
+    description: "A multiple-choice quiz with scoring — swap in your own questions.",
+    category: "Games",
+    files: () => ({
+      ...baseFiles(),
+      "src/App.tsx": `import { useState } from "react";
+
+const QUESTIONS = [
+  { q: "What does HTML stand for?", a: ["HyperText Markup Language", "HighText Machine Language", "Hyperlink Text Mode Language"], correct: 0 },
+  { q: "Which company created React?", a: ["Google", "Meta", "Microsoft"], correct: 1 },
+  { q: "What year was JavaScript created?", a: ["2005", "1989", "1995"], correct: 2 },
+];
+
+export default function App() {
+  const [i, setI] = useState(0);
+  const [score, setScore] = useState(0);
+  const [picked, setPicked] = useState<number | null>(null);
+  const done = i >= QUESTIONS.length;
+
+  function pick(idx: number) {
+    if (picked !== null) return;
+    setPicked(idx);
+    if (idx === QUESTIONS[i].correct) setScore((s) => s + 1);
+    setTimeout(() => { setPicked(null); setI((n) => n + 1); }, 800);
+  }
+
+  return (
+    <main style={{ fontFamily: "system-ui", maxWidth: 480, margin: "64px auto", padding: 24 }}>
+      {done ? (
+        <div style={{ textAlign: "center" }}>
+          <h1>You scored {score}/{QUESTIONS.length}</h1>
+          <button onClick={() => { setI(0); setScore(0); }} style={{ marginTop: 16, padding: "10px 24px", borderRadius: 8, cursor: "pointer" }}>
+            Play again
+          </button>
+        </div>
+      ) : (
+        <>
+          <p style={{ color: "#888", fontSize: 14 }}>Question {i + 1} of {QUESTIONS.length}</p>
+          <h2>{QUESTIONS[i].q}</h2>
+          <div style={{ display: "grid", gap: 10, marginTop: 20 }}>
+            {QUESTIONS[i].a.map((opt, idx) => (
+              <button
+                key={opt}
+                onClick={() => pick(idx)}
+                style={{
+                  padding: 14, borderRadius: 10, cursor: "pointer", textAlign: "left", fontSize: 15,
+                  border: "2px solid " + (picked === null ? "#e5e7eb" : idx === QUESTIONS[i].correct ? "#4ade80" : picked === idx ? "#f87171" : "#e5e7eb"),
+                  background: "#fff",
+                }}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </main>
+  );
+}
+`,
+    }),
+  },
+  {
+    id: "memory",
+    name: "Memory Match",
+    description: "A card-matching memory game with move counter.",
+    category: "Games",
+    files: () => ({
+      ...baseFiles(),
+      "src/App.tsx": `import { useState } from "react";
+
+const EMOJI = ["🍎", "🚀", "🎧", "🌵", "🐙", "⚡", "🎲", "🍕"];
+
+function shuffled() {
+  return [...EMOJI, ...EMOJI]
+    .map((e, i) => ({ id: i, emoji: e }))
+    .sort(() => Math.random() - 0.5);
+}
+
+export default function App() {
+  const [cards] = useState(shuffled);
+  const [flipped, setFlipped] = useState<number[]>([]);
+  const [matched, setMatched] = useState<Set<string>>(new Set());
+  const [moves, setMoves] = useState(0);
+
+  function flip(id: number) {
+    if (flipped.length === 2 || flipped.includes(id)) return;
+    const card = cards.find((c) => c.id === id)!;
+    if (matched.has(card.emoji)) return;
+    const next = [...flipped, id];
+    setFlipped(next);
+    if (next.length === 2) {
+      setMoves((m) => m + 1);
+      const [a, b] = next.map((x) => cards.find((c) => c.id === x)!);
+      if (a.emoji === b.emoji) {
+        setMatched((prev) => new Set(prev).add(a.emoji));
+        setFlipped([]);
+      } else {
+        setTimeout(() => setFlipped([]), 700);
+      }
+    }
+  }
+
+  const won = matched.size === EMOJI.length;
+
+  return (
+    <main style={{ fontFamily: "system-ui", textAlign: "center", padding: 40 }}>
+      <h1>Memory Match</h1>
+      <p style={{ color: "#666" }}>{won ? "You won in " + moves + " moves! Refresh to replay." : moves + " moves"}</p>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 72px)", gap: 10, justifyContent: "center", marginTop: 24 }}>
+        {cards.map((c) => {
+          const up = flipped.includes(c.id) || matched.has(c.emoji);
+          return (
+            <button
+              key={c.id}
+              onClick={() => flip(c.id)}
+              style={{ height: 72, fontSize: 30, borderRadius: 12, border: "1px solid #ddd", cursor: "pointer", background: up ? "#fff" : "#0f172a" }}
+            >
+              {up ? c.emoji : ""}
+            </button>
+          );
+        })}
+      </div>
+    </main>
+  );
+}
 `,
     }),
   },

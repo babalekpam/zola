@@ -37,6 +37,7 @@ import type { Project } from "@/lib/types";
 import { readAttachment } from "@/lib/read-attachment";
 import { useSamples } from "@/hooks/use-projects";
 import { useForkProject } from "@/hooks/use-explore";
+import { useActiveOrg } from "@/hooks/use-active-org";
 import { ImportDialog } from "./import-dialog";
 import { ReferEarnDialog } from "./refer-earn-dialog";
 import { WorkspaceSwitcher } from "./workspace-switcher";
@@ -105,10 +106,11 @@ export function HomeDashboard({
   const [reading, setReading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { data: samples } = useSamples();
+  const { activeOrgId } = useActiveOrg();
   const forkProject = useForkProject();
 
   function onDuplicateProject(id: string) {
-    forkProject.mutate(id, {
+    forkProject.mutate({ projectId: id, orgId: activeOrgId }, {
       onSuccess: (project) => {
         toast.success("Project duplicated");
         onOpenProject(project.id);
@@ -394,17 +396,22 @@ export function HomeDashboard({
             ))}
           </div>
 
-          {/* Clone a sample */}
+          {/* Template gallery, grouped by category like Replit's templates */}
           {samples && samples.length > 0 && (
             <div className="mt-14">
               <div className="mb-3">
-                <h2 className="text-sm font-semibold">Start from a sample</h2>
+                <h2 className="text-sm font-semibold">Templates</h2>
                 <p className="text-xs text-muted-foreground">
                   Clone a ready-made project and tweak it with the AI.
                 </p>
               </div>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {samples.map((s) => (
+              {Array.from(new Set(samples.map((s) => s.category))).map((cat) => (
+                <div key={cat} className="mb-5">
+                  <h3 className="mb-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    {cat}
+                  </h3>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {samples.filter((s) => s.category === cat).map((s) => (
                   <div
                     key={s.id}
                     className="flex flex-col rounded-xl border border-border bg-card p-4"
@@ -425,8 +432,10 @@ export function HomeDashboard({
                       <Plus className="h-3.5 w-3.5" /> Clone this project
                     </button>
                   </div>
-                ))}
-              </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 

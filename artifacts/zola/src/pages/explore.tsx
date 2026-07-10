@@ -1,10 +1,12 @@
 // Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, GitFork, Globe, Search } from "lucide-react";
+import { ArrowLeft, GitFork, Globe, Heart, Search } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
-import { useExplore, useForkProject } from "@/hooks/use-explore";
+import { useActiveOrg } from "@/hooks/use-active-org";
+import { useExplore, useForkProject, useLikeProject } from "@/hooks/use-explore";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -22,7 +24,9 @@ export default function ExplorePage() {
   const [q, setQ] = useState("");
   const [search, setSearch] = useState("");
   const { data: projects, isLoading } = useExplore(search);
+  const { activeOrgId } = useActiveOrg();
   const fork = useForkProject();
+  const like = useLikeProject();
   const [forkingId, setForkingId] = useState<string | null>(null);
 
   function remix(id: string) {
@@ -31,7 +35,7 @@ export default function ExplorePage() {
       return;
     }
     setForkingId(id);
-    fork.mutate(id, {
+    fork.mutate({ projectId: id, orgId: activeOrgId }, {
       onSuccess: (project) => setLocation(`/projects/${project.id}`),
       onError: (err) => {
         toast.error(err.message);
@@ -119,6 +123,26 @@ export default function ExplorePage() {
                       Updated {timeAgo(p.updated_at)}
                     </p>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!user) {
+                        setLocation("/login");
+                        return;
+                      }
+                      like.mutate({ projectId: p.id, liked: p.liked });
+                    }}
+                    className={cn(
+                      "flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px]",
+                      p.liked
+                        ? "border-rose-500/50 bg-rose-500/10 text-rose-500"
+                        : "border-border text-muted-foreground hover:text-foreground",
+                    )}
+                    title={p.liked ? "Unlike" : "Like"}
+                  >
+                    <Heart className={cn("h-3 w-3", p.liked && "fill-current")} />
+                    {p.likes}
+                  </button>
                 </div>
                 <p className="mt-2 line-clamp-2 min-h-[2rem] flex-1 text-xs text-muted-foreground">
                   {p.description ?? "No description."}

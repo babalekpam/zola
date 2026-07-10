@@ -748,3 +748,47 @@ create policy "files: public project read"
     select 1 from public.projects p
     where p.id = project_id and p.visibility = 'public'
   ));
+
+-- ============================================================================
+-- Likes on public projects (Replit-style community upvotes).
+-- ============================================================================
+
+create table if not exists public.project_likes (
+  project_id uuid not null references public.projects(id) on delete cascade,
+  user_id    uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (project_id, user_id)
+);
+
+create index if not exists project_likes_project_idx on public.project_likes(project_id);
+
+alter table public.project_likes enable row level security;
+
+-- Anyone (including logged-out visitors) can count likes on public projects;
+-- members see likes on their own projects too.
+drop policy if exists "likes: read" on public.project_likes;
+create policy "likes: read"
+  on public.project_likes for select
+  using (exists (
+    select 1 from public.projects p
+    where p.id = project_id
+      and (p.visibility = 'public' or public.has_project_access(p.id))
+  ));
+
+-- Users like/unlike as themselves, only on projects they can see.
+drop policy if exists "likes: insert own" on public.project_likes;
+create policy "likes: insert own"
+  on public.project_likes for insert
+  with check (
+    auth.uid() = user_id
+    and exists (
+      select 1 from public.projects p
+      where p.id = project_id
+        and (p.visibility = 'public' or public.has_project_access(p.id))
+    )
+  );
+
+drop policy if exists "likes: delete own" on public.project_likes;
+create policy "likes: delete own"
+  on public.project_likes for delete
+  using (auth.uid() = user_id);
