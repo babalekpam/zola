@@ -27,6 +27,7 @@ import {
   BarChart3,
   Presentation,
   Trash2,
+  Copy,
   FolderOpen,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -35,6 +36,7 @@ import { cn } from "@/lib/utils";
 import type { Project } from "@/lib/types";
 import { readAttachment } from "@/lib/read-attachment";
 import { useSamples } from "@/hooks/use-projects";
+import { useForkProject } from "@/hooks/use-explore";
 import { ImportDialog } from "./import-dialog";
 import { ReferEarnDialog } from "./refer-earn-dialog";
 import { WorkspaceSwitcher } from "./workspace-switcher";
@@ -103,6 +105,17 @@ export function HomeDashboard({
   const [reading, setReading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { data: samples } = useSamples();
+  const forkProject = useForkProject();
+
+  function onDuplicateProject(id: string) {
+    forkProject.mutate(id, {
+      onSuccess: (project) => {
+        toast.success("Project duplicated");
+        onOpenProject(project.id);
+      },
+      onError: (err) => toast.error(err.message),
+    });
+  }
 
   async function handleFiles(list: FileList | null) {
     if (!list || list.length === 0) return;
@@ -449,17 +462,32 @@ export function HomeDashboard({
                   >
                     <div className="mb-2 flex items-start justify-between">
                       <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteProject(p.id);
-                        }}
-                        className="rounded p-1 text-muted-foreground opacity-0 transition-all hover:bg-destructive/20 hover:text-destructive group-hover:opacity-100"
-                        aria-label="Delete project"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      <div className="flex items-center">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDuplicateProject(p.id);
+                          }}
+                          className="rounded p-1 text-muted-foreground opacity-0 transition-all hover:bg-accent hover:text-foreground group-hover:opacity-100"
+                          aria-label="Duplicate project"
+                          title="Duplicate project"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteProject(p.id);
+                          }}
+                          className="rounded p-1 text-muted-foreground opacity-0 transition-all hover:bg-destructive/20 hover:text-destructive group-hover:opacity-100"
+                          aria-label="Delete project"
+                          title="Delete project"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
                     <h3 className="truncate text-sm font-medium">{p.name}</h3>
                     <p className="mt-1 text-xs text-muted-foreground">
