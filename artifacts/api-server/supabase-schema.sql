@@ -138,7 +138,11 @@ create table if not exists public.referrals (
 create index if not exists referrals_referrer_idx on public.referrals(referrer_id);
 
 create or replace function public.gen_referral_code()
-returns text language plpgsql as $$
+returns text language plpgsql
+-- pgcrypto (gen_random_bytes) lives in the `extensions` schema on Supabase, and
+-- callers like handle_new_user run with `search_path = public`, which would hide
+-- it. Pin the search_path here so the code resolves regardless of the caller.
+set search_path = public, extensions as $$
 declare c text;
 begin
   loop
