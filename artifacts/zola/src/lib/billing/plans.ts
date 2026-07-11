@@ -8,6 +8,8 @@ export interface Plan {
   blurb: string;
   features: string[];
   chatPerMinute: number;
+  /** Monthly AI request budget (chat + swarm calls) — platform keys, no BYOK. */
+  aiMonthly: number;
   priceEnvVar?: string;
 }
 
@@ -18,12 +20,13 @@ export const PLANS: Plan[] = [
     priceMonthly: 0,
     blurb: "Try Loop, no card required.",
     features: [
-      "15 AI requests per minute",
+      "300 AI requests per month",
+      "Auto model routing (best model per task)",
       "Unlimited projects",
-      "Bring your own NVIDIA / OpenRouter key",
       "Community support",
     ],
     chatPerMinute: 15,
+    aiMonthly: 300,
   },
   {
     id: "pro",
@@ -31,12 +34,13 @@ export const PLANS: Plan[] = [
     priceMonthly: 19,
     blurb: "For serious builders shipping side projects.",
     features: [
-      "60 AI requests per minute",
+      "5,000 AI requests per month",
+      "Agent swarm mode",
       "All Free features",
-      "Higher token limits",
       "Email support",
     ],
     chatPerMinute: 60,
+    aiMonthly: 5000,
     priceEnvVar: "STRIPE_PRICE_PRO",
   },
   {
@@ -45,12 +49,13 @@ export const PLANS: Plan[] = [
     priceMonthly: 49,
     blurb: "For teams and agencies.",
     features: [
-      "200 AI requests per minute",
+      "20,000 AI requests per month",
       "All Pro features",
       "Priority routing",
       "Priority support · SOC2 roadmap",
     ],
     chatPerMinute: 200,
+    aiMonthly: 20000,
     priceEnvVar: "STRIPE_PRICE_TEAM",
   },
 ];

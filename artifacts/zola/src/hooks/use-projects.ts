@@ -43,6 +43,7 @@ export interface Sample {
   id: string;
   name: string;
   description: string;
+  category: string;
 }
 
 export function useSamples() {
@@ -101,7 +102,13 @@ export function useUpdateProject() {
     mutationFn: ({
       id,
       ...body
-    }: { id: string; name?: string; description?: string; default_model?: string }) =>
+    }: {
+      id: string;
+      name?: string;
+      description?: string;
+      default_model?: string;
+      visibility?: "private" | "public";
+    }) =>
       apiFetch<{ project: Project }>(`/api/projects/${id}`, {
         method: "PATCH",
         body: JSON.stringify(body),

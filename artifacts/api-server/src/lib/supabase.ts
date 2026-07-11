@@ -1,5 +1,6 @@
 // Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Request, Response } from "express";
 
 // The Supabase credentials are stored under NEXT_PUBLIC_* secrets (leftover
@@ -9,6 +10,17 @@ export const SUPABASE_URL =
   process.env.VITE_SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
 export const SUPABASE_ANON_KEY =
   process.env.VITE_SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+/**
+ * Service-role client for routes that must bypass RLS: public site serving
+ * and the token-authenticated key-value store. Null when the key isn't
+ * configured so callers can 503 with a clear message.
+ */
+export function createSupabaseAdminClient(): SupabaseClient | null {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!SUPABASE_URL || !key) return null;
+  return createClient(SUPABASE_URL, key, { auth: { persistSession: false } });
+}
 
 export function createSupabaseServerClient(req: Request, res: Response) {
   // Web clients authenticate via cookies (SSR). Native/mobile clients cannot

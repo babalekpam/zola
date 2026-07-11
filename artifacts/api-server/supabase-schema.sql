@@ -138,11 +138,7 @@ create table if not exists public.referrals (
 create index if not exists referrals_referrer_idx on public.referrals(referrer_id);
 
 create or replace function public.gen_referral_code()
-returns text language plpgsql
--- pgcrypto (gen_random_bytes) lives in the `extensions` schema on Supabase, and
--- callers like handle_new_user run with `search_path = public`, which would hide
--- it. Pin the search_path here so the code resolves regardless of the caller.
-set search_path = public, extensions as $$
+returns text language plpgsql as $$
 declare c text;
 begin
   loop
@@ -590,3 +586,262 @@ alter table public.subscriptions enable row level security;
 drop policy if exists "subscriptions: self read" on public.subscriptions;
 create policy "subscriptions: self read"
   on public.subscriptions for select using (auth.uid() = user_id);
+
+-- ============================================================================
+-- Project secrets (Replit-style env vars). Values are injected into the
+-- WebContainer dev server + shell as process env. Access follows the same
+-- has_project_access rule as files/messages, so collaborators share secrets.
+-- ============================================================================
+
+create table if not exists public.project_secrets (
+  id         uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  key        text not null,
+  value      text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (project_id, key)
+);
+
+create index if not exists project_secrets_project_idx on public.project_secrets(project_id);
+
+drop trigger if exists project_secrets_touch on public.project_secrets;
+create trigger project_secrets_touch before update on public.project_secrets
+  for each row execute function public.touch_updated_at();
+
+alter table public.project_secrets enable row level security;
+
+drop policy if exists "secrets: via project" on public.project_secrets;
+create policy "secrets: via project"
+  on public.project_secrets for all
+  using (public.has_project_access(project_id))
+  with check (public.has_project_access(project_id));
+
+-- ============================================================================
+-- Version control (checkpoints), Deployments, and the key-value Database —
+-- the Replit-parity workspace tools. Checkpoints snapshot the full file tree
+-- as jsonb; deployments store built static output served at /sites/:slug;
+-- project_kv backs the Replit-DB-style store the running app reaches through
+-- its ZOLA_DB_URL env var (routed by db_token, no user auth).
+-- ============================================================================
+
+create table if not exists public.project_snapshots (
+  id         uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  label      text not null default '',
+  kind       text not null default 'manual' check (kind in ('manual', 'auto')),
+  files      jsonb not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists project_snapshots_project_idx
+  on public.project_snapshots(project_id, created_at desc);
+
+alter table public.project_snapshots enable row level security;
+
+drop policy if exists "snapshots: via project" on public.project_snapshots;
+create policy "snapshots: via project"
+  on public.project_snapshots for all
+  using (public.has_project_access(project_id))
+  with check (public.has_project_access(project_id));
+
+create table if not exists public.deployments (
+  id         uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  slug       text not null,
+  status     text not null default 'live',
+  file_count int  not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists deployments_project_idx
+  on public.deployments(project_id, created_at desc);
+create index if not exists deployments_slug_idx
+  on public.deployments(slug, created_at desc);
+
+create table if not exists public.deployment_files (
+  id            uuid primary key default gen_random_uuid(),
+  deployment_id uuid not null references public.deployments(id) on delete cascade,
+  path          text not null,
+  content       text not null,
+  encoding      text not null default 'utf8' check (encoding in ('utf8', 'base64')),
+  unique (deployment_id, path)
+);
+
+alter table public.deployments enable row level security;
+alter table public.deployment_files enable row level security;
+
+-- Owners/members manage deployments through their JWT; the public /sites/:slug
+-- serving route reads via the service role, which bypasses RLS by design.
+drop policy if exists "deployments: via project" on public.deployments;
+create policy "deployments: via project"
+  on public.deployments for all
+  using (public.has_project_access(project_id))
+  with check (public.has_project_access(project_id));
+
+drop policy if exists "deployment files: via project" on public.deployment_files;
+create policy "deployment files: via project"
+  on public.deployment_files for all
+  using (exists (
+    select 1 from public.deployments d
+    where d.id = deployment_id and public.has_project_access(d.project_id)
+  ))
+  with check (exists (
+    select 1 from public.deployments d
+    where d.id = deployment_id and public.has_project_access(d.project_id)
+  ));
+
+-- Per-project capability token the running app uses to reach its database.
+-- Deliberately NOT a column on projects: projects can be publicly readable
+-- (Explore), and the token grants KV write access, so it lives in a table
+-- with RLS enabled and NO policies — service-role access only, via the API.
+create table if not exists public.project_db_tokens (
+  project_id uuid primary key references public.projects(id) on delete cascade,
+  token      uuid not null unique default gen_random_uuid(),
+  created_at timestamptz not null default now()
+);
+
+alter table public.project_db_tokens enable row level security;
+
+create table if not exists public.project_kv (
+  project_id uuid not null references public.projects(id) on delete cascade,
+  key        text not null,
+  value      text not null,
+  updated_at timestamptz not null default now(),
+  primary key (project_id, key)
+);
+
+alter table public.project_kv enable row level security;
+
+drop policy if exists "kv: via project" on public.project_kv;
+create policy "kv: via project"
+  on public.project_kv for all
+  using (public.has_project_access(project_id))
+  with check (public.has_project_access(project_id));
+
+-- ============================================================================
+-- Community: public projects (Explore + Remix) and GitHub export. Public
+-- visibility adds read-only anonymous access to the project row and its
+-- files; chat, secrets, snapshots, and the KV store stay private.
+-- ============================================================================
+
+alter table public.projects
+  add column if not exists visibility text not null default 'private'
+    check (visibility in ('private', 'public'));
+
+-- Last GitHub repo this project was pushed to ("owner/name"), for prefill.
+alter table public.projects
+  add column if not exists github_repo text;
+
+create index if not exists projects_visibility_idx
+  on public.projects(visibility, updated_at desc);
+
+drop policy if exists "projects: public read" on public.projects;
+create policy "projects: public read"
+  on public.projects for select
+  using (visibility = 'public');
+
+drop policy if exists "files: public project read" on public.project_files;
+create policy "files: public project read"
+  on public.project_files for select
+  using (exists (
+    select 1 from public.projects p
+    where p.id = project_id and p.visibility = 'public'
+  ));
+
+-- ============================================================================
+-- Likes on public projects (Replit-style community upvotes).
+-- ============================================================================
+
+create table if not exists public.project_likes (
+  project_id uuid not null references public.projects(id) on delete cascade,
+  user_id    uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (project_id, user_id)
+);
+
+create index if not exists project_likes_project_idx on public.project_likes(project_id);
+
+alter table public.project_likes enable row level security;
+
+-- Anyone (including logged-out visitors) can count likes on public projects;
+-- members see likes on their own projects too.
+drop policy if exists "likes: read" on public.project_likes;
+create policy "likes: read"
+  on public.project_likes for select
+  using (exists (
+    select 1 from public.projects p
+    where p.id = project_id
+      and (p.visibility = 'public' or public.has_project_access(p.id))
+  ));
+
+-- Users like/unlike as themselves, only on projects they can see.
+drop policy if exists "likes: insert own" on public.project_likes;
+create policy "likes: insert own"
+  on public.project_likes for insert
+  with check (
+    auth.uid() = user_id
+    and exists (
+      select 1 from public.projects p
+      where p.id = project_id
+        and (p.visibility = 'public' or public.has_project_access(p.id))
+    )
+  );
+
+drop policy if exists "likes: delete own" on public.project_likes;
+create policy "likes: delete own"
+  on public.project_likes for delete
+  using (auth.uid() = user_id);
+
+-- ============================================================================
+-- Custom domains: an organization links its own domain to a project's
+-- deployment. Ownership is proven via a DNS TXT challenge; once verified,
+-- the API serves that project's live deployment for requests whose Host
+-- header matches (TLS termination is handled by the fronting infra).
+-- ============================================================================
+
+create table if not exists public.custom_domains (
+  id         uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  domain     text not null unique,
+  token      uuid not null default gen_random_uuid(),
+  verified   boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists custom_domains_project_idx on public.custom_domains(project_id);
+
+alter table public.custom_domains enable row level security;
+
+drop policy if exists "domains: via project" on public.custom_domains;
+create policy "domains: via project"
+  on public.custom_domains for all
+  using (public.has_project_access(project_id))
+  with check (public.has_project_access(project_id));
+
+-- ============================================================================
+-- AI usage metering: one row per model call (chat, swarm architect, swarm
+-- worker). Powers monthly plan quotas and the admin usage stats. Writes are
+-- service-role only; users can read their own usage.
+-- ============================================================================
+
+create table if not exists public.ai_usage (
+  id                uuid primary key default gen_random_uuid(),
+  user_id           uuid not null references auth.users(id) on delete cascade,
+  org_id            uuid references public.organizations(id) on delete set null,
+  project_id        uuid references public.projects(id) on delete set null,
+  model_id          text not null,
+  kind              text not null default 'chat',
+  prompt_tokens     integer not null default 0,
+  completion_tokens integer not null default 0,
+  created_at        timestamptz not null default now()
+);
+
+create index if not exists ai_usage_user_month_idx on public.ai_usage(user_id, created_at desc);
+create index if not exists ai_usage_org_month_idx on public.ai_usage(org_id, created_at desc);
+
+alter table public.ai_usage enable row level security;
+
+drop policy if exists "ai usage: self read" on public.ai_usage;
+create policy "ai usage: self read"
+  on public.ai_usage for select using (auth.uid() = user_id);

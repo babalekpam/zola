@@ -6,6 +6,11 @@ export interface Project {
   name: string;
   description: string | null;
   default_model: string;
+  // Capability token routing the app's key-value DB (ZOLA_DB_URL). Only
+  // present on the single-project fetch, and only for members.
+  db_token?: string | null;
+  visibility?: "private" | "public";
+  github_repo?: string | null;
   created_at: string;
   updated_at: string;
 }

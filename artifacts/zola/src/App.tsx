@@ -11,6 +11,8 @@ import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
 import AuthCallbackPage from "@/pages/auth-callback";
 import ProjectsPage from "@/pages/projects";
+import ExplorePage from "@/pages/explore";
+import AdminPage from "@/pages/admin";
 import InvitePage from "@/pages/invite";
 import JoinWorkspacePage from "@/pages/join";
 import OrganizationPage from "@/pages/organization";
@@ -39,6 +41,8 @@ function AppRouter() {
       <Route path="/reset-password" component={ResetPasswordPage} />
       <Route path="/auth/callback" component={AuthCallbackPage} />
       <Route path="/projects" component={ProjectsPage} />
+      <Route path="/explore" component={ExplorePage} />
+      <Route path="/admin" component={AdminPage} />
       <Route path="/organization" component={OrganizationPage} />
       <Route path="/invite/:token" component={InvitePage} />
       <Route path="/join/:token" component={JoinWorkspacePage} />

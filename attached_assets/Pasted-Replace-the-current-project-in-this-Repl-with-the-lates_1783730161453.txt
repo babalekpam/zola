@@ -1,0 +1,16 @@
+Replace the current project in this Repl with the latest main from the GitHub repo babalekpam/zola (commit ed6cd00 — "Replit platform parity" merge), then republish. The Supabase database schema for this version is ALREADY applied — do not run migrations or modify the database.
+
+Follow these rules exactly:
+
+Back up first: commit any uncommitted local changes to a branch named backup-before-parity-swap so nothing is lost.
+Sync the tree to main:
+If this Repl's git is already connected to babalekpam/zola: fetch and hard-sync the working tree to origin/main.
+If it holds a different codebase: do a safe in-place swap — bring in the new tree from the repo but NEVER delete or overwrite .replit, replit.nix, .replitignore, .cache, .git, .local, .agents, or attached_assets. Remove only the known old app files explicitly; no blanket rm -rf.
+Install with a FOREGROUND CI=true pnpm install (background installs get killed mid-link in this environment).
+Re-register artifacts: this project has artifacts in artifacts/ (zola frontend, api-server, zola-mobile, mockup-sandbox). After a tree change, run the post-merge setup / reconciliation so each artifact.toml is registered and per-artifact workflows are created and started. Remove any stale leftover workflow from the old project.
+Secrets — keep all existing ones, and make sure these exist (ask me for missing values, never invent them):
+SUPABASE_SERVICE_ROLE_KEY (required — deployments, key-value DB, admin, metering)
+PLATFORM_ADMIN_EMAILS = babalekpam@gmail.com
+AI keys I provide: ANTHROPIC_API_KEY, OPENAI_API_KEY, GROQ_API_KEY, DEEPSEEK_API_KEY, DASHSCOPE_API_KEY, MOONSHOT_API_KEY (at least one required; more = more models)
+Verify before publishing: pnpm run typecheck passes; in the preview: login works → model picker shows "Auto (recommended)" and chat responds → workspace shows tabs Webview / Console / Shell / Secrets / DB / History / Deploy / Git → chat has Plan and 🐝 Swarm toggles → /explore loads → /admin shows platform stats when I'm logged in. Read replit.md at the repo root for the feature map and gotchas before fixing anything.
+Republish the deployment so the live URL serves this version.

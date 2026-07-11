@@ -80,6 +80,16 @@ export default defineConfig({
         target: "http://localhost:8080",
         changeOrigin: true,
       },
+      // Public API-server routes: deployed sites (/sites/:slug) and the
+      // running app's key-value DB (/db/:token).
+      "/sites": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
+      "/db": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
     },
   },
   preview: {

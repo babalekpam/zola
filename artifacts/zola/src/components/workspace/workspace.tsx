@@ -7,7 +7,9 @@ import { ChatPanel } from "@/components/chat/chat-panel";
 import { FileTree } from "@/components/editor/file-tree";
 import { CodeEditor } from "@/components/editor/code-editor";
 import { EditorTabs } from "@/components/editor/editor-tabs";
-import { WebContainerPreview } from "@/components/preview/webcontainer-preview";
+import { ToolPane } from "@/components/workspace/tool-pane";
+import { RunButton } from "@/components/workspace/run-button";
+import { PresenceAvatars } from "@/components/workspace/presence-avatars";
 import { ProjectSettings } from "@/components/workspace/project-settings";
 import {
   ResizablePanelGroup,
@@ -15,6 +17,11 @@ import {
   ResizableHandle,
 } from "@/components/ui/resizable";
 import { apiFetch } from "@/hooks/use-projects";
+import { useSecrets } from "@/hooks/use-secrets";
+import { useFileSync } from "@/hooks/use-file-sync";
+import { createAutoSnapshot } from "@/hooks/use-snapshots";
+import { dbUrlFor } from "@/components/workspace/database-pane";
+import { runtime } from "@/lib/webcontainer/runtime";
 import type { ChatMessage, Project, ProjectFile } from "@/lib/types";
 
 interface Props {
@@ -37,6 +44,31 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
   );
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { data: secrets, isLoading: secretsLoading } = useSecrets(project.id);
+
+  // Keep the WebContainer runtime fed with the latest files (hot remount while
+  // running) and project secrets (picked up on the next Run / shell spawn).
+  useEffect(() => {
+    void runtime.setFiles(files);
+  }, [files]);
+
+  useEffect(() => {
+    const env = Object.fromEntries(
+      (secrets ?? []).map((s) => [s.key, s.value]),
+    );
+    // The app's key-value store rides along like REPLIT_DB_URL does.
+    if (project.db_token) env.ZOLA_DB_URL = dbUrlFor(project.db_token);
+    runtime.setEnv(env);
+  }, [secrets, project.db_token]);
+
+  // Auto-run once when the workspace opens, after secrets have loaded (or
+  // failed to), so the webview comes up without pressing Run — matching the
+  // old preview behavior.
+  useEffect(() => {
+    if (secretsLoading) return;
+    if (runtime.state.status === "idle") void runtime.run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [secretsLoading]);
 
   const openFile = useCallback((p: string) => {
     setActivePath(p);
@@ -121,6 +153,9 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
 
   const applyFiles = useCallback(
     (incoming: { path: string; content: string }[]) => {
+      // Replit-style safety net: checkpoint the pre-edit state so any AI
+      // change can be rolled back from the History tab.
+      createAutoSnapshot(project.id, "Before AI edit", files);
       setFiles((prev) => {
         const next = { ...prev };
         for (const { path, content } of incoming) {
@@ -131,8 +166,40 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
       if (incoming[0]) openFile(incoming[0].path);
       setDirty(true);
     },
-    [openFile],
+    [openFile, project.id, files],
   );
+
+  // Live multiplayer sync: merge collaborators' edits without marking the
+  // buffer dirty (the sender's autosave already persisted them).
+  useFileSync(
+    project.id,
+    files,
+    useCallback((changed, deleted) => {
+      setFiles((prev) => {
+        const next = { ...prev };
+        for (const [path, content] of Object.entries(changed)) {
+          next[path] = content;
+        }
+        for (const path of deleted) delete next[path];
+        return next;
+      });
+      setOpenPaths((prev) => prev.filter((p) => !deleted.includes(p)));
+      setActivePath((cur) => (cur && deleted.includes(cur) ? null : cur));
+    }, []),
+  );
+
+  const restoreFiles = useCallback((restored: Record<string, string>) => {
+    setFiles(restored);
+    const paths = Object.keys(restored);
+    setOpenPaths((prev) => prev.filter((p) => restored[p] !== undefined));
+    setActivePath((cur) =>
+      cur && restored[cur] !== undefined
+        ? cur
+        : paths.find((p) => p === "src/App.tsx") ?? paths[0] ?? null,
+    );
+    // The restore endpoint already wrote these files server-side.
+    setDirty(false);
+  }, []);
 
   const save = useCallback(async () => {
     if (!dirty) return;
@@ -186,17 +253,21 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
             </span>
             <ProjectSettings project={project} />
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            {dirty ? "Unsaved changes" : "All changes saved"}
-            <button
-              type="button"
-              onClick={() => void save()}
-              disabled={!dirty || saving}
-              className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 text-xs hover:bg-accent disabled:opacity-50"
-            >
-              <Save className="h-3.5 w-3.5" />
-              {saving ? "Saving…" : "Save"}
-            </button>
+          <div className="flex items-center gap-3">
+            <PresenceAvatars projectId={project.id} />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              {dirty ? "Unsaved changes" : "All changes saved"}
+              <button
+                type="button"
+                onClick={() => void save()}
+                disabled={!dirty || saving}
+                className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 text-xs hover:bg-accent disabled:opacity-50"
+              >
+                <Save className="h-3.5 w-3.5" />
+                {saving ? "Saving…" : "Save"}
+              </button>
+            </div>
+            <RunButton />
           </div>
         </header>
 
@@ -261,7 +332,12 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
           <ResizableHandle withHandle />
 
           <ResizablePanel defaultSize={25} minSize={15} className="overflow-hidden">
-            <WebContainerPreview files={files} />
+            <ToolPane
+              project={project}
+              dbToken={project.db_token ?? null}
+              files={files}
+              onRestore={restoreFiles}
+            />
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>

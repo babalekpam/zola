@@ -14,10 +14,19 @@ export function ProjectSettings({ project }: Props) {
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description ?? "");
   const [defaultModel, setDefaultModel] = useState(project.default_model);
+  const [visibility, setVisibility] = useState<"private" | "public">(
+    project.visibility ?? "private",
+  );
   const update = useUpdateProject();
 
   async function onSave() {
-    await update.mutateAsync({ id: project.id, name, description, default_model: defaultModel });
+    await update.mutateAsync({
+      id: project.id,
+      name,
+      description,
+      default_model: defaultModel,
+      visibility,
+    });
     setOpen(false);
   }
 
@@ -63,6 +72,17 @@ export function ProjectSettings({ project }: Props) {
                 {MODELS.map((m) => (
                   <option key={m.id} value={m.id}>{m.label}</option>
                 ))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Visibility</label>
+              <select
+                className="w-full rounded-md border border-border bg-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                value={visibility}
+                onChange={(e) => setVisibility(e.target.value as "private" | "public")}
+              >
+                <option value="private">Private — only you and collaborators</option>
+                <option value="public">Public — listed on Explore, anyone can remix</option>
               </select>
             </div>
             <div className="flex justify-end gap-2">

@@ -5,11 +5,14 @@ import { google } from "@ai-sdk/google";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import type { LanguageModel } from "ai";
 import {
+  classifyTask,
   getModelById,
   PROVIDER_DEFAULT_MODEL,
   PROVIDER_PRIORITY,
+  TASK_ROUTES,
   type ModelDescriptor,
   type ProviderId,
+  type TaskKind,
 } from "./models";
 
 function openrouter() {
@@ -18,39 +21,54 @@ function openrouter() {
   return createOpenRouter({ apiKey });
 }
 
-function nvidia() {
-  const apiKey = process.env.NVIDIA_API_KEY;
-  if (!apiKey) throw new Error("NVIDIA_API_KEY is not configured");
-  return createOpenAI({
-    apiKey,
-    baseURL: "https://integrate.api.nvidia.com/v1",
-    name: "nvidia",
-  });
+// OpenAI-compatible providers share one factory; each needs only a key + URL.
+function openAICompatible(
+  envVar: string,
+  baseURL: string,
+  name: string,
+) {
+  const apiKey = process.env[envVar];
+  if (!apiKey) throw new Error(`${envVar} is not configured`);
+  return createOpenAI({ apiKey, baseURL, name });
 }
 
+const nvidia = () =>
+  openAICompatible("NVIDIA_API_KEY", "https://integrate.api.nvidia.com/v1", "nvidia");
+const groq = () =>
+  openAICompatible("GROQ_API_KEY", "https://api.groq.com/openai/v1", "groq");
+const deepseek = () =>
+  openAICompatible("DEEPSEEK_API_KEY", "https://api.deepseek.com/v1", "deepseek");
+const qwen = () =>
+  openAICompatible(
+    "DASHSCOPE_API_KEY",
+    "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+    "qwen",
+  );
+const moonshot = () =>
+  openAICompatible("MOONSHOT_API_KEY", "https://api.moonshot.ai/v1", "moonshot");
+
+const PROVIDER_ENV: Record<ProviderId, string> = {
+  anthropic: "ANTHROPIC_API_KEY",
+  openai: "OPENAI_API_KEY",
+  google: "GOOGLE_GENERATIVE_AI_API_KEY",
+  openrouter: "OPENROUTER_API_KEY",
+  nvidia: "NVIDIA_API_KEY",
+  groq: "GROQ_API_KEY",
+  deepseek: "DEEPSEEK_API_KEY",
+  qwen: "DASHSCOPE_API_KEY",
+  moonshot: "MOONSHOT_API_KEY",
+};
+
 function ensureProviderKey(provider: ModelDescriptor["provider"]) {
-  const key = {
-    anthropic: process.env.ANTHROPIC_API_KEY,
-    openai: process.env.OPENAI_API_KEY,
-    google: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-    openrouter: process.env.OPENROUTER_API_KEY,
-    nvidia: process.env.NVIDIA_API_KEY,
-  }[provider];
-  if (!key) {
+  if (!process.env[PROVIDER_ENV[provider]]) {
     throw new Error(
-      `Missing API key for provider "${provider}". Set the matching env var.`,
+      `Missing API key for provider "${provider}". Set ${PROVIDER_ENV[provider]}.`,
     );
   }
 }
 
 function providerHasKey(provider: ProviderId): boolean {
-  return {
-    anthropic: !!process.env.ANTHROPIC_API_KEY,
-    openai: !!process.env.OPENAI_API_KEY,
-    google: !!process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-    openrouter: !!process.env.OPENROUTER_API_KEY,
-    nvidia: !!process.env.NVIDIA_API_KEY,
-  }[provider];
+  return !!process.env[PROVIDER_ENV[provider]];
 }
 
 function instantiate(descriptor: ModelDescriptor): LanguageModel {
@@ -65,6 +83,14 @@ function instantiate(descriptor: ModelDescriptor): LanguageModel {
       return openrouter().chat(descriptor.modelId);
     case "nvidia":
       return nvidia()(descriptor.modelId);
+    case "groq":
+      return groq()(descriptor.modelId);
+    case "deepseek":
+      return deepseek()(descriptor.modelId);
+    case "qwen":
+      return qwen()(descriptor.modelId);
+    case "moonshot":
+      return moonshot()(descriptor.modelId);
   }
 }
 
@@ -108,4 +134,36 @@ export function resolveModelWithFallback(modelId: string): {
   throw new Error(
     "No AI provider is configured. Set at least one API key (ANTHROPIC_API_KEY recommended).",
   );
+}
+
+/**
+ * Resolve a model for a task kind: first candidate in the task's route whose
+ * provider key is configured, else the global fallback chain.
+ */
+export function resolveTaskModel(task: TaskKind): {
+  model: LanguageModel;
+  usedModelId: string;
+} {
+  for (const candidateId of TASK_ROUTES[task]) {
+    const descriptor = getModelById(candidateId);
+    if (descriptor && providerHasKey(descriptor.provider)) {
+      return { model: instantiate(descriptor), usedModelId: descriptor.id };
+    }
+  }
+  const fallback = resolveModelWithFallback("");
+  return { model: fallback.model, usedModelId: fallback.usedModelId };
+}
+
+/**
+ * The "Auto" router: classify the prompt, then route to the best available
+ * model for that kind of work (design → design model, coding → coding model…).
+ */
+export function resolveAutoModel(prompt: string): {
+  model: LanguageModel;
+  usedModelId: string;
+  task: TaskKind;
+} {
+  const task = classifyTask(prompt);
+  const { model, usedModelId } = resolveTaskModel(task);
+  return { model, usedModelId, task };
 }
