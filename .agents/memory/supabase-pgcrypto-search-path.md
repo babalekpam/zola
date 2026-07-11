@@ -31,6 +31,13 @@ here was (b) on `gen_referral_code`. Keep the live DB and
 `artifacts/api-server/supabase-schema.sql` in lockstep whenever you touch DB
 functions.
 
+**Regression warning (happened once):** re-applying the repo's schema file to the
+live DB silently REVERTED this fix and broke all signups again, because the fix
+was not in the copy of `supabase-schema.sql` on GitHub main. After any schema
+re-apply or tree swap, verify the fix is present both in the file AND live
+(`select pg_get_functiondef('public.gen_referral_code()'::regprocedure)`), and
+push the fixed schema file upstream so fresh applies don't regress.
+
 **Debugging note:** the direct DB host `db.<ref>.supabase.co` is NOT reachable
 from Replit. Use the Supavisor pooler `aws-1-us-east-1.pooler.supabase.com:5432`,
 user `postgres.<ref>`, password from `SUPABASE_DB_URL`, `sslmode=require`.

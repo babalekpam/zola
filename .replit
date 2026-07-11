@@ -21,3 +21,8 @@ timeoutMs = 180000
 
 [nix]
 channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+PLATFORM_ADMIN_EMAILS = "babalekpam@gmail.com"

@@ -7,9 +7,14 @@ interface Props {
 }
 
 const PROVIDER_LABELS: Record<string, string> = {
+  auto: "Auto",
   anthropic: "Anthropic",
   openai: "OpenAI",
   google: "Google",
+  groq: "Groq",
+  deepseek: "DeepSeek",
+  qwen: "Qwen",
+  moonshot: "Moonshot",
   openrouter: "OpenRouter",
   nvidia: "NVIDIA",
 };
