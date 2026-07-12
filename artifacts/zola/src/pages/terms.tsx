@@ -13,7 +13,7 @@ export default function TermsPage() {
           <ArrowLeft className="h-4 w-4" /> Back
         </Link>
       </header>
-      <article className="prose prose-invert max-w-none">
+      <article className="prose max-w-none">
         <h1>Terms of Service</h1>
         <p className="text-muted-foreground">Last updated: July 3, 2026</p>
         <p>

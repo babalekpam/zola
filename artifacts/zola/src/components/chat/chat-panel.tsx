@@ -268,7 +268,7 @@ function MessageBubble({ role, content }: { role: string; content: string }) {
       role === "user" ? "ml-8 bg-accent" : "mr-8 border border-border bg-card",
     )}>
       <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">{role}</div>
-      <div className="prose prose-sm prose-invert max-w-none">
+      <div className="prose prose-sm max-w-none">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{prose}</ReactMarkdown>
       </div>
       {blocks.length > 0 ? (

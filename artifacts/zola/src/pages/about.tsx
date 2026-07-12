@@ -13,7 +13,7 @@ export default function AboutPage() {
           <ArrowLeft className="h-4 w-4" /> Back
         </Link>
       </header>
-      <article className="prose prose-invert max-w-none">
+      <article className="prose max-w-none">
         <h1>About Loop</h1>
         <p>
           Loop is a vibe-coding workspace built by <strong>Argilette Lab</strong>. It lets you describe
