@@ -9,7 +9,7 @@ const GROUPS: { heading: string; tools: Tool[] }[] = [
   },
   {
     heading: "Setup",
-    tools: ["git", "secrets", "history"],
+    tools: ["skills", "git", "secrets", "history"],
   },
 ];
 

@@ -13,6 +13,7 @@ import {
 import { CODING_SYSTEM_PROMPT, PLANNING_SYSTEM_PROMPT } from "../lib/ai/system-prompt";
 import { AUTO_MODEL_ID, DEFAULT_MODEL_ID } from "../lib/ai/models";
 import { checkAiQuota, recordAiUsage } from "../lib/ai/quota";
+import { buildSkillsSection, isSkillFile } from "../lib/ai/skills";
 import { startSwarm } from "../lib/ai/swarm";
 import { createSupabaseServerClient } from "../lib/supabase";
 
@@ -97,14 +98,20 @@ router.post("/chat", async (req, res) => {
       modelId = resolved.usedModelId;
     }
 
-    let projectContext = body.projectFiles
+    // Skills get their own prompt section (never truncated away with the
+    // file listing), and skill files are excluded from the listing so they
+    // aren't sent twice.
+    const skillsSection = body.projectFiles ? buildSkillsSection(body.projectFiles) : "";
+    let fileListing = body.projectFiles
       ? `\n\nCurrent project files:\n${Object.entries(body.projectFiles)
+          .filter(([p]) => !isSkillFile(p))
           .map(([p, c]) => `--- ${p} ---\n${c.slice(0, 4000)}`)
           .join("\n\n")}`
       : "";
-    if (projectContext.length > MAX_CONTEXT_CHARS) {
-      projectContext = projectContext.slice(0, MAX_CONTEXT_CHARS);
+    if (fileListing.length > MAX_CONTEXT_CHARS) {
+      fileListing = fileListing.slice(0, MAX_CONTEXT_CHARS);
     }
+    const projectContext = skillsSection + fileListing;
 
     let orgId: string | null = null;
     if (body.projectId) {

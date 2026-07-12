@@ -344,6 +344,9 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
               dbToken={project.db_token ?? null}
               files={files}
               onRestore={restoreFiles}
+              onWriteFile={updateFile}
+              onDeleteFile={(p) => void deleteFile(p)}
+              onOpenFile={openFile}
               active={activeTool}
               onSelect={setActiveTool}
             />

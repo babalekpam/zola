@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import {
   Activity,
   AppWindow,
+  BookOpen,
   Database,
   GitBranch,
   Globe,
@@ -22,6 +23,7 @@ import { DeployPane } from "@/components/workspace/deploy-pane";
 import { GitPane } from "@/components/workspace/git-pane";
 import { DomainsPane } from "@/components/workspace/domains-pane";
 import { MonitoringPane } from "@/components/workspace/monitoring-pane";
+import { SkillsPane } from "@/components/workspace/skills-pane";
 import { cn } from "@/lib/utils";
 import type { Project } from "@/lib/types";
 
@@ -35,7 +37,8 @@ export type Tool =
   | "deploy"
   | "git"
   | "domains"
-  | "monitoring";
+  | "monitoring"
+  | "skills";
 
 export const TOOL_META: Record<Tool, { label: string; icon: typeof AppWindow }> = {
   webview: { label: "Webview", icon: AppWindow },
@@ -48,6 +51,7 @@ export const TOOL_META: Record<Tool, { label: string; icon: typeof AppWindow }> 
   git: { label: "Git", icon: GitBranch },
   domains: { label: "Domains", icon: Globe },
   monitoring: { label: "Monitoring", icon: Activity },
+  skills: { label: "Skills", icon: BookOpen },
 };
 
 const TABS: Tool[] = [
@@ -60,6 +64,7 @@ const TABS: Tool[] = [
   "deploy",
   "domains",
   "monitoring",
+  "skills",
   "git",
 ];
 
@@ -68,6 +73,9 @@ interface Props {
   dbToken: string | null;
   files: Record<string, string>;
   onRestore: (files: Record<string, string>) => void;
+  onWriteFile: (path: string, content: string) => void;
+  onDeleteFile: (path: string) => void;
+  onOpenFile: (path: string) => void;
   /** Controlled selection (the workspace tools sidebar drives this). */
   active?: Tool;
   onSelect?: (tool: Tool) => void;
@@ -84,6 +92,9 @@ export function ToolPane({
   dbToken,
   files,
   onRestore,
+  onWriteFile,
+  onDeleteFile,
+  onOpenFile,
   active: controlledActive,
   onSelect,
 }: Props) {
@@ -175,6 +186,16 @@ export function ToolPane({
         {opened.has("monitoring") && (
           <div className={cn("absolute inset-0", active !== "monitoring" && "hidden")}>
             <MonitoringPane projectId={projectId} />
+          </div>
+        )}
+        {opened.has("skills") && (
+          <div className={cn("absolute inset-0", active !== "skills" && "hidden")}>
+            <SkillsPane
+              files={files}
+              onWriteFile={onWriteFile}
+              onDeleteFile={onDeleteFile}
+              onOpenFile={onOpenFile}
+            />
           </div>
         )}
         {opened.has("git") && (
