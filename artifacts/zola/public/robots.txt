@@ -1,2 +1,14 @@
 User-agent: *
 Allow: /
+Disallow: /projects
+Disallow: /admin
+Disallow: /account
+Disallow: /billing
+Disallow: /organization
+Disallow: /auth/
+Disallow: /invite/
+Disallow: /join/
+Disallow: /reset-password
+Disallow: /forgot-password
+
+Sitemap: https://www.loopafrica.org/sitemap.xml
