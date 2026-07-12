@@ -39,11 +39,25 @@ function contentTypeFor(path: string): string {
   return CONTENT_TYPES[ext] ?? "application/octet-stream";
 }
 
+/**
+ * Count a page view (HTML navigations only, not assets) for the Monitoring
+ * tool. Fire-and-forget: analytics must never slow down or break serving.
+ */
+function recordPageView(supabase: SupabaseClient, projectId: string): void {
+  void supabase
+    .rpc("bump_site_hit", { p_project: projectId })
+    .then(({ error }) => {
+      if (error) console.warn("site hit not recorded:", error.message);
+    });
+}
+
 /** Serve one path from a deployment: exact file, else SPA index fallback. */
 async function serveDeploymentPath(
   supabase: SupabaseClient,
   deploymentId: string,
+  projectId: string | null,
   requested: string,
+  method: string,
   res: Response,
 ): Promise<void> {
   const candidates = requested === "" ? ["index.html"] : [requested];
@@ -58,6 +72,11 @@ async function serveDeploymentPath(
       .maybeSingle();
     if (!file) continue;
 
+    // Count real navigations only: GET for an HTML document. HEAD probes
+    // (uptime monitors, link checkers) and asset requests are excluded.
+    if (projectId && method === "GET" && path.endsWith(".html")) {
+      recordPageView(supabase, projectId);
+    }
     res.setHeader("Content-Type", contentTypeFor(path));
     res.setHeader(
       "Cache-Control",
@@ -73,19 +92,19 @@ async function serveDeploymentPath(
   res.status(404).send("Not found");
 }
 
-async function latestDeploymentId(
+async function latestDeployment(
   supabase: SupabaseClient,
   column: "slug" | "project_id",
   value: string,
-): Promise<string | null> {
+): Promise<{ id: string; project_id: string } | null> {
   const { data } = await supabase
     .from("deployments")
-    .select("id")
+    .select("id, project_id")
     .eq(column, value)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  return data?.id ?? null;
+  return data ?? null;
 }
 
 const router = Router();
@@ -113,12 +132,12 @@ router.get("/sites/:slug{/*splat}", async (req, res) => {
     return;
   }
 
-  const deploymentId = await latestDeploymentId(supabase, "slug", slug);
-  if (!deploymentId) {
+  const deployment = await latestDeployment(supabase, "slug", slug);
+  if (!deployment) {
     res.status(404).send("Site not found");
     return;
   }
-  await serveDeploymentPath(supabase, deploymentId, requested, res);
+  await serveDeploymentPath(supabase, deployment.id, deployment.project_id, requested, req.method, res);
 });
 
 export default router;
@@ -162,12 +181,12 @@ export async function customDomainMiddleware(
 
   const supabase = createSupabaseAdminClient();
   if (!supabase) { next(); return; }
-  const deploymentId = await latestDeploymentId(supabase, "project_id", entry.projectId);
-  if (!deploymentId) {
+  const deployment = await latestDeployment(supabase, "project_id", entry.projectId);
+  if (!deployment) {
     res.status(404).send("No deployment yet for this domain");
     return;
   }
   const requested = decodeURIComponent(req.path).replace(/^\/+/, "");
   if (requested.includes("..")) { res.status(400).send("Bad path"); return; }
-  await serveDeploymentPath(supabase, deploymentId, requested, res);
+  await serveDeploymentPath(supabase, deployment.id, deployment.project_id, requested, req.method, res);
 }

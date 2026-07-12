@@ -153,7 +153,7 @@ export function DeployPane({ projectId }: { projectId: string }) {
 }
 
 /** Link an organization's own domain to this deployment, Replit-style. */
-function DomainsSection({ projectId }: { projectId: string }) {
+export function DomainsSection({ projectId }: { projectId: string }) {
   const { data: domains } = useDomains(projectId);
   const add = useAddDomain(projectId);
   const verify = useVerifyDomain(projectId);

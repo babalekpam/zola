@@ -1,9 +1,11 @@
 // Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  Activity,
   AppWindow,
   Database,
   GitBranch,
+  Globe,
   History,
   KeyRound,
   Rocket,
@@ -18,10 +20,12 @@ import { DatabasePane } from "@/components/workspace/database-pane";
 import { HistoryPane } from "@/components/workspace/history-pane";
 import { DeployPane } from "@/components/workspace/deploy-pane";
 import { GitPane } from "@/components/workspace/git-pane";
+import { DomainsPane } from "@/components/workspace/domains-pane";
+import { MonitoringPane } from "@/components/workspace/monitoring-pane";
 import { cn } from "@/lib/utils";
 import type { Project } from "@/lib/types";
 
-type Tool =
+export type Tool =
   | "webview"
   | "console"
   | "shell"
@@ -29,17 +33,34 @@ type Tool =
   | "database"
   | "history"
   | "deploy"
-  | "git";
+  | "git"
+  | "domains"
+  | "monitoring";
 
-const TABS: { id: Tool; label: string; icon: typeof AppWindow }[] = [
-  { id: "webview", label: "Webview", icon: AppWindow },
-  { id: "console", label: "Console", icon: Terminal },
-  { id: "shell", label: "Shell", icon: SquareTerminal },
-  { id: "secrets", label: "Secrets", icon: KeyRound },
-  { id: "database", label: "DB", icon: Database },
-  { id: "history", label: "History", icon: History },
-  { id: "deploy", label: "Deploy", icon: Rocket },
-  { id: "git", label: "Git", icon: GitBranch },
+export const TOOL_META: Record<Tool, { label: string; icon: typeof AppWindow }> = {
+  webview: { label: "Webview", icon: AppWindow },
+  console: { label: "Console", icon: Terminal },
+  shell: { label: "Shell", icon: SquareTerminal },
+  secrets: { label: "Secrets", icon: KeyRound },
+  database: { label: "Database", icon: Database },
+  history: { label: "History", icon: History },
+  deploy: { label: "Publishing", icon: Rocket },
+  git: { label: "Git", icon: GitBranch },
+  domains: { label: "Domains", icon: Globe },
+  monitoring: { label: "Monitoring", icon: Activity },
+};
+
+const TABS: Tool[] = [
+  "webview",
+  "console",
+  "shell",
+  "secrets",
+  "database",
+  "history",
+  "deploy",
+  "domains",
+  "monitoring",
+  "git",
 ];
 
 interface Props {
@@ -47,48 +68,69 @@ interface Props {
   dbToken: string | null;
   files: Record<string, string>;
   onRestore: (files: Record<string, string>) => void;
+  /** Controlled selection (the workspace tools sidebar drives this). */
+  active?: Tool;
+  onSelect?: (tool: Tool) => void;
 }
 
 /**
  * Replit-style tool pane: Webview / Console / Shell / Secrets / DB / History /
- * Deploy. Panes stay mounted once opened (hidden with CSS) so the webview
- * doesn't reload and the shell session survives tab switches.
+ * Publishing / Domains / Monitoring / Git. Panes stay mounted once opened
+ * (hidden with CSS) so the webview doesn't reload and the shell session
+ * survives tab switches.
  */
-export function ToolPane({ project, dbToken, files, onRestore }: Props) {
+export function ToolPane({
+  project,
+  dbToken,
+  files,
+  onRestore,
+  active: controlledActive,
+  onSelect,
+}: Props) {
   const projectId = project.id;
-  const [active, setActive] = useState<Tool>("webview");
+  const [internalActive, setInternalActive] = useState<Tool>("webview");
+  const active = controlledActive ?? internalActive;
   const [opened, setOpened] = useState<Set<Tool>>(new Set<Tool>(["webview"]));
 
-  function select(tool: Tool) {
-    setActive(tool);
+  // Whatever becomes active (from tabs here or the tools sidebar) must be
+  // mounted.
+  useEffect(() => {
     setOpened((prev) => {
-      if (prev.has(tool)) return prev;
+      if (prev.has(active)) return prev;
       const next = new Set(prev);
-      next.add(tool);
+      next.add(active);
       return next;
     });
+  }, [active]);
+
+  function select(tool: Tool) {
+    setInternalActive(tool);
+    onSelect?.(tool);
   }
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex shrink-0 items-center gap-0.5 overflow-x-auto border-b border-border bg-card px-1.5 pt-1 [scrollbar-width:thin]">
-        {TABS.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => select(id)}
-            className={cn(
-              "flex shrink-0 items-center gap-1 rounded-t-md border border-b-0 px-2 py-1.5 text-[11px]",
-              active === id
-                ? "border-border bg-background font-medium text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground",
-            )}
-            title={label}
-          >
-            <Icon className="h-3.5 w-3.5" />
-            {label}
-          </button>
-        ))}
+        {TABS.map((id) => {
+          const { label, icon: Icon } = TOOL_META[id];
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => select(id)}
+              className={cn(
+                "flex shrink-0 items-center gap-1 rounded-t-md border border-b-0 px-2 py-1.5 text-[11px]",
+                active === id
+                  ? "border-border bg-background font-medium text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+              title={label}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              {label}
+            </button>
+          );
+        })}
       </div>
 
       <div className="relative min-h-0 flex-1">
@@ -123,6 +165,16 @@ export function ToolPane({ project, dbToken, files, onRestore }: Props) {
         {opened.has("deploy") && (
           <div className={cn("absolute inset-0", active !== "deploy" && "hidden")}>
             <DeployPane projectId={projectId} />
+          </div>
+        )}
+        {opened.has("domains") && (
+          <div className={cn("absolute inset-0", active !== "domains" && "hidden")}>
+            <DomainsPane projectId={projectId} />
+          </div>
+        )}
+        {opened.has("monitoring") && (
+          <div className={cn("absolute inset-0", active !== "monitoring" && "hidden")}>
+            <MonitoringPane projectId={projectId} />
           </div>
         )}
         {opened.has("git") && (

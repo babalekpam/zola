@@ -9,3 +9,4 @@
 - [Applying schema to Supabase](supabase-schema-apply.md) — direct host is IPv6-only (no egress); use pooler aws-N-region.pooler.supabase.com user postgres.<ref>. New keys: sb_secret_=service_role.
 - [Verifying auth-gated pages](verify-auth-gated-pages.md) — /projects redirects w/o Supabase session; verify layout via a self-contained mockup-sandbox copy + screenshot, not the main app.
 - [Artifact re-registration after tree swap](artifact-reregistration.md) — copying artifact dirs doesn't register them; run runPostMergeSetup() so reconciliation scans artifact.toml & starts workflows.
+- [E2E test users](e2e-test-user-supabase.md) — signup needs email confirmation; create pre-confirmed user via admin API, log in during tests, delete after.

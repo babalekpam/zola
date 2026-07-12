@@ -7,7 +7,8 @@ import { ChatPanel } from "@/components/chat/chat-panel";
 import { FileTree } from "@/components/editor/file-tree";
 import { CodeEditor } from "@/components/editor/code-editor";
 import { EditorTabs } from "@/components/editor/editor-tabs";
-import { ToolPane } from "@/components/workspace/tool-pane";
+import { ToolPane, type Tool } from "@/components/workspace/tool-pane";
+import { WorkspaceTools } from "@/components/workspace/workspace-tools";
 import { RunButton } from "@/components/workspace/run-button";
 import { PresenceAvatars } from "@/components/workspace/presence-avatars";
 import { ProjectSettings } from "@/components/workspace/project-settings";
@@ -44,6 +45,7 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
   );
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [activeTool, setActiveTool] = useState<Tool>("webview");
   const { data: secrets, isLoading: secretsLoading } = useSecrets(project.id);
 
   // Keep the WebContainer runtime fed with the latest files (hot remount while
@@ -293,14 +295,19 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
             maxSize={28}
             className="overflow-hidden bg-card"
           >
-            <FileTree
-              files={files}
-              activePath={activePath}
-              onSelect={openFile}
-              onCreate={createFile}
-              onDelete={(p) => void deleteFile(p)}
-              onRename={(f, t) => void renameFile(f, t)}
-            />
+            <div className="flex h-full flex-col">
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                <FileTree
+                  files={files}
+                  activePath={activePath}
+                  onSelect={openFile}
+                  onCreate={createFile}
+                  onDelete={(p) => void deleteFile(p)}
+                  onRename={(f, t) => void renameFile(f, t)}
+                />
+              </div>
+              <WorkspaceTools active={activeTool} onSelect={setActiveTool} />
+            </div>
           </ResizablePanel>
 
           <ResizableHandle withHandle />
@@ -337,6 +344,8 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
               dbToken={project.db_token ?? null}
               files={files}
               onRestore={restoreFiles}
+              active={activeTool}
+              onSelect={setActiveTool}
             />
           </ResizablePanel>
         </ResizablePanelGroup>

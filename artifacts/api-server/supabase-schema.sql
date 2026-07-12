@@ -849,3 +849,39 @@ alter table public.ai_usage enable row level security;
 drop policy if exists "ai usage: self read" on public.ai_usage;
 create policy "ai usage: self read"
   on public.ai_usage for select using (auth.uid() = user_id);
+
+-- ============================================================================
+-- Site analytics (Monitoring tool): one row per project per day, incremented
+-- by the public /sites serving routes via the service role. Owners/members
+-- read their own project's traffic; nobody writes through their JWT.
+-- ============================================================================
+
+create table if not exists public.site_hits (
+  project_id uuid not null references public.projects(id) on delete cascade,
+  day        date not null default (now() at time zone 'utc')::date,
+  count      bigint not null default 0,
+  primary key (project_id, day)
+);
+
+alter table public.site_hits enable row level security;
+
+drop policy if exists "site hits: read via project" on public.site_hits;
+create policy "site hits: read via project"
+  on public.site_hits for select
+  using (public.has_project_access(project_id));
+
+-- Atomic increment used by the serving routes (service role bypasses RLS,
+-- but the function keeps the upsert race-free).
+create or replace function public.bump_site_hit(p_project uuid)
+returns void
+language sql
+security definer
+set search_path = public, extensions
+as $$
+  insert into public.site_hits (project_id, day, count)
+  values (p_project, (now() at time zone 'utc')::date, 1)
+  on conflict (project_id, day)
+  do update set count = public.site_hits.count + 1;
+$$;
+
+revoke execute on function public.bump_site_hit(uuid) from public, anon, authenticated;

@@ -15,6 +15,7 @@ import stripeRouter from "./stripe";
 import collabRouter from "./collab";
 import referralRouter from "./referral";
 import orgsRouter from "./orgs";
+import analyticsRouter from "./analytics";
 
 const router: IRouter = Router();
 
@@ -34,5 +35,6 @@ router.use(stripeRouter);
 router.use(collabRouter);
 router.use(referralRouter);
 router.use(orgsRouter);
+router.use(analyticsRouter);
 
 export default router;

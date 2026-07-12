@@ -93,7 +93,7 @@ export const MODELS: ModelDescriptor[] = [
     contextWindow: 1_000_000,
   },
   {
-    id: "kimi-k2",
+    id: "or-kimi-k2",
     label: "Kimi K2 (via OpenRouter)",
     provider: "openrouter",
     modelId: "moonshotai/kimi-k2",
