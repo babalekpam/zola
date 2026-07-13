@@ -54,6 +54,15 @@ function adminOf(req: Request): SupabaseClient {
   return (req as Request & { admin: SupabaseClient }).admin;
 }
 
+// Lightweight probe for the UI: is the signed-in user a platform admin?
+// Registered before the gate so it answers false instead of 403.
+router.get("/admin/me", async (req, res) => {
+  const supabase = createSupabaseServerClient(req, res);
+  const { data } = await supabase.auth.getUser();
+  const email = data.user?.email?.toLowerCase();
+  res.json({ admin: Boolean(email && adminEmails().has(email)) });
+});
+
 router.use("/admin", (req, res, next) => {
   void requireAdmin(req, res, next);
 });

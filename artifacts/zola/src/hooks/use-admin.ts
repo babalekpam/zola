@@ -41,6 +41,17 @@ export interface AdminProject {
   updated_at: string;
 }
 
+/** Cheap probe: is the signed-in user a platform admin? Never 403s. */
+export function useIsAdmin() {
+  return useQuery({
+    queryKey: ["admin-me"],
+    queryFn: () =>
+      apiFetch<{ admin: boolean }>("/api/admin/me").then((d) => d.admin),
+    retry: false,
+    staleTime: 5 * 60_000,
+  });
+}
+
 /** Also doubles as the access check: 403 → not a platform admin. */
 export function usePlatformStats() {
   return useQuery({

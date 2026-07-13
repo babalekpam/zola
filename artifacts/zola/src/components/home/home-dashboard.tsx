@@ -36,6 +36,7 @@ import { cn } from "@/lib/utils";
 import type { Project } from "@/lib/types";
 import { readAttachment } from "@/lib/read-attachment";
 import { useSamples } from "@/hooks/use-projects";
+import { useIsAdmin } from "@/hooks/use-admin";
 import { useForkProject } from "@/hooks/use-explore";
 import { useActiveOrg } from "@/hooks/use-active-org";
 import { ImportDialog } from "./import-dialog";
@@ -106,6 +107,7 @@ export function HomeDashboard({
   const [reading, setReading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { data: samples } = useSamples();
+  const { data: isAdmin } = useIsAdmin();
   const { activeOrgId } = useActiveOrg();
   const forkProject = useForkProject();
 
@@ -215,6 +217,19 @@ export function HomeDashboard({
               {item.label}
             </Link>
           ))}
+
+          {isAdmin && (
+            <>
+              <div className="mx-3 my-2 border-t border-border" />
+              <Link
+                href="/admin"
+                className="flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm font-medium text-primary hover:bg-accent"
+              >
+                <Shield className="h-4 w-4" />
+                Super admin
+              </Link>
+            </>
+          )}
         </nav>
 
         <div className="p-3">
