@@ -25,4 +25,4 @@ channel = "stable-25_05"
 [userenv]
 
 [userenv.shared]
-PLATFORM_ADMIN_EMAILS = "abel@argilette.com,info@argilette.com,abelfo@argilette.com"
+PLATFORM_ADMIN_EMAILS = "info@argilette.com"
