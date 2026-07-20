@@ -46,6 +46,8 @@ const qwen = () =>
   );
 const moonshot = () =>
   openAICompatible("MOONSHOT_API_KEY", "https://api.moonshot.ai/v1", "moonshot");
+const xai = () =>
+  openAICompatible("XAI_API_KEY", "https://api.x.ai/v1", "xai");
 
 const PROVIDER_ENV: Record<ProviderId, string> = {
   anthropic: "ANTHROPIC_API_KEY",
@@ -57,6 +59,7 @@ const PROVIDER_ENV: Record<ProviderId, string> = {
   deepseek: "DEEPSEEK_API_KEY",
   qwen: "DASHSCOPE_API_KEY",
   moonshot: "MOONSHOT_API_KEY",
+  xai: "XAI_API_KEY",
 };
 
 function ensureProviderKey(provider: ModelDescriptor["provider"]) {
@@ -91,6 +94,8 @@ function instantiate(descriptor: ModelDescriptor): LanguageModel {
       return qwen()(descriptor.modelId);
     case "moonshot":
       return moonshot()(descriptor.modelId);
+    case "xai":
+      return xai()(descriptor.modelId);
   }
 }
 

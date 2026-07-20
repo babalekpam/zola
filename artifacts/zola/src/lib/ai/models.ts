@@ -9,7 +9,8 @@ export type ProviderId =
   | "groq"
   | "deepseek"
   | "qwen"
-  | "moonshot";
+  | "moonshot"
+  | "xai";
 
 export interface ModelDescriptor {
   id: string;
@@ -75,6 +76,30 @@ export const MODELS: ModelDescriptor[] = [
     modelId: "gpt-4.1",
     description: "Strong general-purpose model",
     contextWindow: 1_000_000,
+  },
+  {
+    id: "grok-4",
+    label: "Grok 4",
+    provider: "xai",
+    modelId: "grok-4",
+    description: "xAI's flagship reasoning model",
+    contextWindow: 256_000,
+  },
+  {
+    id: "grok-4-fast",
+    label: "Grok 4 Fast",
+    provider: "xai",
+    modelId: "grok-4-fast",
+    description: "Fast, cost-efficient Grok",
+    contextWindow: 2_000_000,
+  },
+  {
+    id: "grok-code-fast-1",
+    label: "Grok Code Fast",
+    provider: "xai",
+    modelId: "grok-code-fast-1",
+    description: "xAI's speedy coding model",
+    contextWindow: 256_000,
   },
   {
     id: "gemini-2.5-pro",

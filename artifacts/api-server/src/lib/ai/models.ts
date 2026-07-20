@@ -8,7 +8,8 @@ export type ProviderId =
   | "groq"
   | "deepseek"
   | "qwen"
-  | "moonshot";
+  | "moonshot"
+  | "xai";
 
 export interface ModelDescriptor {
   id: string;
@@ -26,6 +27,10 @@ export const MODELS: ModelDescriptor[] = [
   { id: "gpt-5", label: "GPT-5", provider: "openai", modelId: "gpt-5" },
   { id: "gpt-5-mini", label: "GPT-5 mini", provider: "openai", modelId: "gpt-5-mini" },
   { id: "gpt-4.1", label: "GPT-4.1", provider: "openai", modelId: "gpt-4.1" },
+  // xAI (Grok)
+  { id: "grok-4", label: "Grok 4", provider: "xai", modelId: "grok-4" },
+  { id: "grok-4-fast", label: "Grok 4 Fast", provider: "xai", modelId: "grok-4-fast" },
+  { id: "grok-code-fast-1", label: "Grok Code Fast", provider: "xai", modelId: "grok-code-fast-1" },
   // Google
   { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro", provider: "google", modelId: "gemini-2.5-pro" },
   { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash", provider: "google", modelId: "gemini-2.5-flash" },
@@ -97,6 +102,7 @@ export const PROVIDER_DEFAULT_MODEL: Record<ProviderId, string> = {
   deepseek: "deepseek-chat",
   qwen: "qwen3-coder",
   moonshot: "kimi-k2",
+  xai: "grok-4-fast",
   openrouter: "or-kimi-k2",
   nvidia: "nvidia-qwen-coder-32b",
 };
@@ -110,6 +116,7 @@ export const PROVIDER_PRIORITY: ProviderId[] = [
   "qwen",
   "groq",
   "moonshot",
+  "xai",
   "nvidia",
   "openrouter",
 ];
