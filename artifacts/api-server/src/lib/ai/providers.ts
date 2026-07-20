@@ -62,16 +62,26 @@ const PROVIDER_ENV: Record<ProviderId, string> = {
   xai: "XAI_API_KEY",
 };
 
-function ensureProviderKey(provider: ModelDescriptor["provider"]) {
-  if (!process.env[PROVIDER_ENV[provider]]) {
-    throw new Error(
-      `Missing API key for provider "${provider}". Set ${PROVIDER_ENV[provider]}.`,
-    );
-  }
-}
+// Some providers use recognizable key prefixes; a key with the wrong shape is
+// treated as unconfigured so requests fall back instead of hard-failing.
+const KEY_PREFIX: Partial<Record<ProviderId, string>> = {
+  xai: "xai-",
+  groq: "gsk_",
+};
 
 function providerHasKey(provider: ProviderId): boolean {
-  return !!process.env[PROVIDER_ENV[provider]];
+  const key = process.env[PROVIDER_ENV[provider]];
+  if (!key) return false;
+  const prefix = KEY_PREFIX[provider];
+  return !prefix || key.startsWith(prefix);
+}
+
+function ensureProviderKey(provider: ModelDescriptor["provider"]) {
+  if (!providerHasKey(provider)) {
+    throw new Error(
+      `Missing or invalid API key for provider "${provider}". Set ${PROVIDER_ENV[provider]}.`,
+    );
+  }
 }
 
 function instantiate(descriptor: ModelDescriptor): LanguageModel {
