@@ -87,7 +87,7 @@ export default function AdminPage() {
             href="/projects"
             className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
           >
-            <ArrowLeft className="h-4 w-4" /> Projects
+            <ArrowLeft className="h-4 w-4" /> My account
           </Link>
           <span className="text-sm font-semibold">Platform Admin</span>
         </div>

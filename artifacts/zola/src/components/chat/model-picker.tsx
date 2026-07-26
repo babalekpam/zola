@@ -10,6 +10,7 @@ const PROVIDER_LABELS: Record<string, string> = {
   auto: "Auto",
   anthropic: "Anthropic",
   openai: "OpenAI",
+  xai: "xAI (Grok)",
   google: "Google",
   groq: "Groq",
   deepseek: "DeepSeek",

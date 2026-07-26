@@ -9,7 +9,8 @@ export type ProviderId =
   | "groq"
   | "deepseek"
   | "qwen"
-  | "moonshot";
+  | "moonshot"
+  | "xai";
 
 export interface ModelDescriptor {
   id: string;
@@ -77,19 +78,51 @@ export const MODELS: ModelDescriptor[] = [
     contextWindow: 1_000_000,
   },
   {
-    id: "gemini-2.5-pro",
-    label: "Gemini 2.5 Pro",
+    id: "grok-4",
+    label: "Grok 4",
+    provider: "xai",
+    modelId: "grok-4",
+    description: "xAI's flagship reasoning model",
+    contextWindow: 256_000,
+  },
+  {
+    id: "grok-4-fast",
+    label: "Grok 4 Fast",
+    provider: "xai",
+    modelId: "grok-4-fast",
+    description: "Fast, cost-efficient Grok",
+    contextWindow: 2_000_000,
+  },
+  {
+    id: "grok-code-fast-1",
+    label: "Grok Code Fast",
+    provider: "xai",
+    modelId: "grok-code-fast-1",
+    description: "xAI's speedy coding model",
+    contextWindow: 256_000,
+  },
+  {
+    id: "gemini-3-pro",
+    label: "Gemini 3 Pro",
     provider: "google",
-    modelId: "gemini-2.5-pro",
+    modelId: "gemini-3-pro-preview",
     description: "Google's flagship",
     contextWindow: 2_000_000,
   },
   {
-    id: "gemini-2.5-flash",
-    label: "Gemini 2.5 Flash",
+    id: "gemini-3-flash",
+    label: "Gemini 3 Flash",
     provider: "google",
-    modelId: "gemini-2.5-flash",
-    description: "Fast and cheap",
+    modelId: "gemini-3-flash-preview",
+    description: "Fast and capable",
+    contextWindow: 1_000_000,
+  },
+  {
+    id: "gemini-flash-lite",
+    label: "Gemini Flash Lite",
+    provider: "google",
+    modelId: "gemini-flash-lite-latest",
+    description: "Fastest and cheapest Gemini",
     contextWindow: 1_000_000,
   },
   {

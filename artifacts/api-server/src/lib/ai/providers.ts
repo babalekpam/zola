@@ -46,6 +46,8 @@ const qwen = () =>
   );
 const moonshot = () =>
   openAICompatible("MOONSHOT_API_KEY", "https://api.moonshot.ai/v1", "moonshot");
+const xai = () =>
+  openAICompatible("XAI_API_KEY", "https://api.x.ai/v1", "xai");
 
 const PROVIDER_ENV: Record<ProviderId, string> = {
   anthropic: "ANTHROPIC_API_KEY",
@@ -57,18 +59,29 @@ const PROVIDER_ENV: Record<ProviderId, string> = {
   deepseek: "DEEPSEEK_API_KEY",
   qwen: "DASHSCOPE_API_KEY",
   moonshot: "MOONSHOT_API_KEY",
+  xai: "XAI_API_KEY",
 };
 
-function ensureProviderKey(provider: ModelDescriptor["provider"]) {
-  if (!process.env[PROVIDER_ENV[provider]]) {
-    throw new Error(
-      `Missing API key for provider "${provider}". Set ${PROVIDER_ENV[provider]}.`,
-    );
-  }
-}
+// Some providers use recognizable key prefixes; a key with the wrong shape is
+// treated as unconfigured so requests fall back instead of hard-failing.
+const KEY_PREFIX: Partial<Record<ProviderId, string>> = {
+  xai: "xai-",
+  groq: "gsk_",
+};
 
 function providerHasKey(provider: ProviderId): boolean {
-  return !!process.env[PROVIDER_ENV[provider]];
+  const key = process.env[PROVIDER_ENV[provider]];
+  if (!key) return false;
+  const prefix = KEY_PREFIX[provider];
+  return !prefix || key.startsWith(prefix);
+}
+
+function ensureProviderKey(provider: ModelDescriptor["provider"]) {
+  if (!providerHasKey(provider)) {
+    throw new Error(
+      `Missing or invalid API key for provider "${provider}". Set ${PROVIDER_ENV[provider]}.`,
+    );
+  }
 }
 
 function instantiate(descriptor: ModelDescriptor): LanguageModel {
@@ -91,6 +104,8 @@ function instantiate(descriptor: ModelDescriptor): LanguageModel {
       return qwen()(descriptor.modelId);
     case "moonshot":
       return moonshot()(descriptor.modelId);
+    case "xai":
+      return xai()(descriptor.modelId);
   }
 }
 

@@ -10,6 +10,7 @@ import {
   History,
   KeyRound,
   Rocket,
+  ShieldCheck,
   SquareTerminal,
   Terminal,
 } from "lucide-react";
@@ -17,6 +18,7 @@ import { WebviewPane } from "@/components/workspace/webview-pane";
 import { ConsolePane } from "@/components/workspace/console-pane";
 import { ShellPane } from "@/components/workspace/shell-pane";
 import { SecretsPane } from "@/components/workspace/secrets-pane";
+import { SecurityPane } from "@/components/workspace/security-pane";
 import { DatabasePane } from "@/components/workspace/database-pane";
 import { HistoryPane } from "@/components/workspace/history-pane";
 import { DeployPane } from "@/components/workspace/deploy-pane";
@@ -32,6 +34,7 @@ export type Tool =
   | "console"
   | "shell"
   | "secrets"
+  | "security"
   | "database"
   | "history"
   | "deploy"
@@ -45,6 +48,7 @@ export const TOOL_META: Record<Tool, { label: string; icon: typeof AppWindow }> 
   console: { label: "Console", icon: Terminal },
   shell: { label: "Shell", icon: SquareTerminal },
   secrets: { label: "Secrets", icon: KeyRound },
+  security: { label: "Security", icon: ShieldCheck },
   database: { label: "Database", icon: Database },
   history: { label: "History", icon: History },
   deploy: { label: "Publishing", icon: Rocket },
@@ -59,6 +63,7 @@ const TABS: Tool[] = [
   "console",
   "shell",
   "secrets",
+  "security",
   "database",
   "history",
   "deploy",
@@ -161,6 +166,11 @@ export function ToolPane({
         {opened.has("secrets") && (
           <div className={cn("absolute inset-0", active !== "secrets" && "hidden")}>
             <SecretsPane projectId={projectId} />
+          </div>
+        )}
+        {opened.has("security") && (
+          <div className={cn("absolute inset-0", active !== "security" && "hidden")}>
+            <SecurityPane project={project} files={files} onOpenFile={onOpenFile} />
           </div>
         )}
         {opened.has("database") && (
