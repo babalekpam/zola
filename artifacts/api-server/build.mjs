@@ -15,7 +15,13 @@ async function buildAll() {
   await rm(distDir, { recursive: true, force: true });
 
   await esbuild({
-    entryPoints: [path.resolve(artifactDir, "src/index.ts")],
+    // index.ts is the long-running server (listen on PORT); app.ts is bundled
+    // separately so serverless hosts (api/index.mjs on Vercel) can import the
+    // Express app without starting a listener.
+    entryPoints: [
+      path.resolve(artifactDir, "src/index.ts"),
+      path.resolve(artifactDir, "src/app.ts"),
+    ],
     platform: "node",
     bundle: true,
     format: "esm",
