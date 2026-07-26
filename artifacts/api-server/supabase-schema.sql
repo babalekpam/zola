@@ -36,7 +36,7 @@ create table if not exists public.messages (
   created_at timestamptz not null default now()
 );
 
-create index if not exists messages_project_id_idx
+create index if not exists messages_project_created_idx
   on public.messages(project_id, created_at);
 
 alter table public.projects       enable row level security;
@@ -885,3 +885,35 @@ as $$
 $$;
 
 revoke execute on function public.bump_site_hit(uuid) from public, anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Advisor fixes (applied to the live project as migration
+-- security_perf_advisor_fixes; kept here so fresh bootstraps match).
+
+-- Pin search_path on functions flagged as role-mutable.
+alter function public.touch_updated_at() set search_path = pg_catalog, public;
+alter function public.purge_old_usage_log() set search_path = pg_catalog, public;
+
+-- handle_new_user only runs from the auth.users trigger; nobody needs RPC access.
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
+
+-- qualify_referral is only called by the API server with the service role.
+revoke execute on function public.qualify_referral(uuid, integer) from public, anon, authenticated;
+grant execute on function public.qualify_referral(uuid, integer) to service_role;
+
+-- check_chat_rate_limit is called via RPC with the user's JWT: authenticated only.
+revoke execute on function public.check_chat_rate_limit(uuid) from public, anon;
+grant execute on function public.check_chat_rate_limit(uuid) to authenticated;
+
+-- Covering indexes for foreign keys flagged by the performance advisor.
+create index if not exists ai_usage_project_id_idx on public.ai_usage (project_id);
+create index if not exists organization_invites_accepted_by_idx on public.organization_invites (accepted_by);
+create index if not exists organization_invites_invited_by_idx on public.organization_invites (invited_by);
+create index if not exists profiles_referred_by_idx on public.profiles (referred_by);
+create index if not exists project_invites_accepted_by_idx on public.project_invites (accepted_by);
+create index if not exists project_invites_invited_by_idx on public.project_invites (invited_by);
+create index if not exists project_likes_user_id_idx on public.project_likes (user_id);
+
+-- messages_project_id_idx duplicated messages_project_created_idx (both btree
+-- (project_id, created_at)); the bootstrap above now creates only the latter.
+drop index if exists public.messages_project_id_idx;

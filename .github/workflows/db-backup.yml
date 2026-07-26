@@ -1,0 +1,45 @@
+# Weekly logical backup of the Supabase database (public schema).
+#
+# Requires a repository secret named SUPABASE_DB_URL containing the *Session
+# pooler* connection string from the Supabase dashboard (Connect -> Session
+# pooler). The pooler is required: GitHub runners are IPv4-only and the direct
+# db.<ref>.supabase.co host is IPv6.
+#
+# Dumps only the public schema (app data). Auth users and storage are managed
+# by Supabase and intentionally excluded so password hashes never land in CI
+# artifacts. Backups are kept as workflow artifacts for 30 days.
+name: Database backup
+
+on:
+  schedule:
+    - cron: "0 3 * * 0" # Sundays 03:00 UTC
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    container: postgres:17
+    steps:
+      - name: Dump public schema
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$DB_URL" ]; then
+            echo "SUPABASE_DB_URL secret is not set" >&2
+            exit 1
+          fi
+          pg_dump "$DB_URL" --schema=public --no-owner --no-privileges \
+            --format=custom --file=backup.dump
+          pg_dump "$DB_URL" --schema=public --no-owner --no-privileges \
+            --format=plain --file=backup.sql
+          ls -lh backup.*
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-backup-${{ github.run_id }}
+          path: |
+            backup.dump
+            backup.sql
+          retention-days: 30
+          if-no-files-found: error
