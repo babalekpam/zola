@@ -30,10 +30,19 @@ function inviteLink(token: string): string {
 }
 
 export default function OrganizationPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const { activeOrg, activeOrgId } = useActiveOrg();
 
+  // Wait for the session to load from storage before deciding the user is
+  // signed out, otherwise every hard refresh bounces to /login.
+  if (authLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </main>
+    );
+  }
   if (!user) {
     setLocation("/login");
     return null;

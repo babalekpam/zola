@@ -6,10 +6,19 @@ import { useAuth } from "@/hooks/use-auth";
 import { apiFetch } from "@/hooks/use-projects";
 
 export default function AccountPage() {
-  const { user, signOut } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const [, setLocation] = useLocation();
   const [deleting, setDeleting] = useState(false);
 
+  // Wait for the session to load from storage before deciding the user is
+  // signed out, otherwise every hard refresh bounces to /login.
+  if (authLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </main>
+    );
+  }
   if (!user) { setLocation("/login"); return null; }
 
   async function deleteAccount() {
