@@ -7,7 +7,7 @@ import { useProjects, useCreateProject, useDeleteProject } from "@/hooks/use-pro
 import { HomeDashboard } from "@/components/home/home-dashboard";
 
 export default function ProjectsPage() {
-  const { user, signOut } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const [, setLocation] = useLocation();
   const { activeOrgId } = useActiveOrg();
   const { data: projects, isLoading } = useProjects(activeOrgId);
@@ -15,6 +15,15 @@ export default function ProjectsPage() {
   const deleteProject = useDeleteProject();
   const [creating, setCreating] = useState(false);
 
+  // Wait for the session to load from storage before deciding the user is
+  // signed out, otherwise every hard refresh bounces to /login.
+  if (authLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </main>
+    );
+  }
   if (!user) { setLocation("/login"); return null; }
 
   const userName =

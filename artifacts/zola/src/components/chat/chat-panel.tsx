@@ -124,8 +124,8 @@ export function ChatPanel({ projectId, files, initialMessages, onApplyFiles }: P
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
-        <div className="flex items-center gap-2 text-sm font-medium">
+      <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-2.5">
+        <div className="flex shrink-0 items-center gap-2 whitespace-nowrap text-sm font-medium">
           <img src={`${import.meta.env.BASE_URL}loop-mark.png`} alt="Loop" className="h-5 w-5" />
           Loop Chat
         </div>

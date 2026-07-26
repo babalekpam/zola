@@ -16,7 +16,7 @@ interface Sub {
 }
 
 export default function BillingPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [sub, setSub] = useState<Sub | null>(null);
   const [loading, setLoading] = useState(true);
@@ -24,6 +24,9 @@ export default function BillingPage() {
   const [portalLoading, setPortalLoading] = useState(false);
 
   useEffect(() => {
+    // Wait for the session to load from storage before deciding the user is
+    // signed out, otherwise every hard refresh bounces to /login.
+    if (authLoading) return;
     if (!user) { setLocation("/login"); return; }
     const sb = createSupabaseBrowserClient();
     sb.from("subscriptions")
@@ -34,7 +37,7 @@ export default function BillingPage() {
         setSub(data as Sub | null);
         setLoading(false);
       });
-  }, [user, setLocation]);
+  }, [user, authLoading, setLocation]);
 
   const current = getPlan(sub?.plan);
 

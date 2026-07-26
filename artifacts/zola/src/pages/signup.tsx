@@ -1,7 +1,8 @@
 // Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
+import { useAuth } from "@/hooks/use-auth";
 
 function readReferralCode(): string | undefined {
   const fromUrl = new URLSearchParams(window.location.search).get("ref");
@@ -14,11 +15,17 @@ function readReferralCode(): string | undefined {
 
 export default function SignupPage() {
   const [, setLocation] = useLocation();
+  const { user, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+
+  // Already signed in: go straight to the app instead of the signup form.
+  useEffect(() => {
+    if (!authLoading && user) setLocation("/projects");
+  }, [user, authLoading, setLocation]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();

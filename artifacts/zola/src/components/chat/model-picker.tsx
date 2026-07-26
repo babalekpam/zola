@@ -25,7 +25,7 @@ export function ModelPicker({ value, onChange }: Props) {
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="rounded-md border border-border bg-card px-2 py-1 text-xs text-foreground outline-none focus:ring-1 focus:ring-ring"
+      className="min-w-0 max-w-full truncate rounded-md border border-border bg-card px-2 py-1 text-xs text-foreground outline-none focus:ring-1 focus:ring-ring"
     >
       {Object.entries(PROVIDER_LABELS).map(([provider, label]) => {
         const group = MODELS.filter((m) => m.provider === provider);
