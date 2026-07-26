@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "buildCommand": "pnpm -w run typecheck:libs && pnpm run build",
+  "buildCommand": "pnpm -w run typecheck:libs && pnpm run build && mkdir -p public",
   "rewrites": [{ "source": "/(.*)", "destination": "/api" }],
   "functions": {
     "api/index.mjs": {
