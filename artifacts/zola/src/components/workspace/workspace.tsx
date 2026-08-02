@@ -35,14 +35,9 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
   const [files, setFiles] = useState<Record<string, string>>(() =>
     Object.fromEntries(initialFiles.map((f) => [f.path, f.content])),
   );
-  const initialPath =
-    initialFiles.find((f) => f.path === "src/App.tsx")?.path ??
-    initialFiles[0]?.path ??
-    null;
-  const [activePath, setActivePath] = useState<string | null>(initialPath);
-  const [openPaths, setOpenPaths] = useState<string[]>(
-    initialPath ? [initialPath] : [],
-  );
+  // No file is opened by default; the user can open one from the file tree.
+  const [activePath, setActivePath] = useState<string | null>(null);
+  const [openPaths, setOpenPaths] = useState<string[]>([]);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTool, setActiveTool] = useState<Tool>("webview");
@@ -192,13 +187,8 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
 
   const restoreFiles = useCallback((restored: Record<string, string>) => {
     setFiles(restored);
-    const paths = Object.keys(restored);
     setOpenPaths((prev) => prev.filter((p) => restored[p] !== undefined));
-    setActivePath((cur) =>
-      cur && restored[cur] !== undefined
-        ? cur
-        : paths.find((p) => p === "src/App.tsx") ?? paths[0] ?? null,
-    );
+    setActivePath((cur) => (cur && restored[cur] !== undefined ? cur : null));
     // The restore endpoint already wrote these files server-side.
     setDirty(false);
   }, []);
