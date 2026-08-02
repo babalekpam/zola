@@ -125,11 +125,10 @@ export function HomeDashboard({
 
   function submitPrompt() {
     const trimmed = prompt.trim();
-    const finalPrompt =
-      mode === "design" && trimmed
-        ? `Design mode — focus on the visual design first: create a polished UI mockup (layout, colors, typography) before any functionality.\n\n${trimmed}`
-        : trimmed;
-    onCreate(finalPrompt || undefined, {
+    // The workspace chat reads this flag, turns on Design mode, routes to the
+    // design-tier model and applies the design system prompt + design MCP tools.
+    localStorage.setItem("loop_design_mode", String(mode === "design"));
+    onCreate(trimmed || undefined, {
       attachments: attachments.length ? attachments : undefined,
     });
   }

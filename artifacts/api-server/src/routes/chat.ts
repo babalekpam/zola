@@ -10,8 +10,10 @@ import {
 import {
   resolveAutoModel,
   resolveModelWithFallback,
+  resolveTaskModel,
+  markProviderUnhealthyFromError,
 } from "../lib/ai/providers";
-import { CODING_SYSTEM_PROMPT, PLANNING_SYSTEM_PROMPT } from "../lib/ai/system-prompt";
+import { CODING_SYSTEM_PROMPT, DESIGN_SYSTEM_PROMPT, PLANNING_SYSTEM_PROMPT } from "../lib/ai/system-prompt";
 import { AUTO_MODEL_ID, DEFAULT_MODEL_ID } from "../lib/ai/models";
 import { checkAiQuota, recordAiUsage } from "../lib/ai/quota";
 import { buildSkillsSection, isSkillFile } from "../lib/ai/skills";
@@ -77,6 +79,7 @@ router.post("/chat", async (req, res) => {
       projectId?: string;
       planMode?: boolean;
       swarmMode?: boolean;
+      designMode?: boolean;
     };
 
     if (!Array.isArray(body.messages) || body.messages.length === 0) {
@@ -100,7 +103,10 @@ router.post("/chat", async (req, res) => {
     let model;
     let modelId: string;
     if (requestedModelId === AUTO_MODEL_ID) {
-      const routed = resolveAutoModel(prompt);
+      // Design mode always deserves the design-tier model; otherwise classify.
+      const routed = body.designMode
+        ? { ...resolveTaskModel("design"), task: "design" as const }
+        : resolveAutoModel(prompt);
       model = routed.model;
       modelId = routed.usedModelId;
     } else {
@@ -196,7 +202,11 @@ router.post("/chat", async (req, res) => {
     }
 
     // --- Single-agent mode --------------------------------------------------
-    const basePrompt = body.planMode ? PLANNING_SYSTEM_PROMPT : CODING_SYSTEM_PROMPT;
+    const basePrompt = body.planMode
+      ? PLANNING_SYSTEM_PROMPT
+      : body.designMode
+        ? DESIGN_SYSTEM_PROMPT
+        : CODING_SYSTEM_PROMPT;
 
     // MCP: dial the project's enabled tool servers and hand their tools to the
     // model. Servers that don't answer are skipped rather than fatal — a dead
@@ -249,12 +259,21 @@ router.post("/chat", async (req, res) => {
           },
         ]);
       },
-      async onError() {
+      async onError({ error }) {
         await closeConnections(mcpConnections);
+        const message = error instanceof Error ? error.message : String(error);
+        // Bench providers with dead keys so the next Auto request routes around them.
+        const benched = markProviderUnhealthyFromError(modelId, message);
+        req.log.error({ err: error, modelId, benched }, "chat stream error");
       },
     });
 
-    result.pipeDataStreamToResponse(res);
+    result.pipeDataStreamToResponse(res, {
+      getErrorMessage: (error) => {
+        const message = error instanceof Error ? error.message : String(error);
+        return `Model ${modelId} failed: ${message.slice(0, 300)}. Try again — a failing provider is skipped for a few minutes — or pick another model.`;
+      },
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     req.log.error({ err }, "chat route error");

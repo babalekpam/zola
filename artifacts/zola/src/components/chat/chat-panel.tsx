@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 import { useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
-import { Send, Sparkles, Mic } from "lucide-react";
+import { Send, Sparkles, Mic, Palette } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
@@ -30,6 +30,10 @@ export function ChatPanel({ projectId, files, initialMessages, onApplyFiles }: P
     if (typeof window === "undefined") return false;
     return localStorage.getItem("loop_swarm_mode") === "true";
   });
+  const [designMode, setDesignMode] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("loop_design_mode") === "true";
+  });
   const [recording, setRecording] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastAppliedRef = useRef<string>("");
@@ -45,9 +49,13 @@ export function ChatPanel({ projectId, files, initialMessages, onApplyFiles }: P
     localStorage.setItem("loop_swarm_mode", String(swarmMode));
   }, [swarmMode]);
 
+  useEffect(() => {
+    localStorage.setItem("loop_design_mode", String(designMode));
+  }, [designMode]);
+
   const { messages, input, setInput, handleInputChange, handleSubmit, status, error } = useChat({
     api: `${API_URL}/api/chat`,
-    body: { modelId, projectFiles: files, projectId, planMode, swarmMode },
+    body: { modelId, projectFiles: files, projectId, planMode, swarmMode, designMode },
     id: projectId,
     credentials: "include",
     initialMessages: (initialMessages ?? [])
@@ -214,6 +222,25 @@ export function ChatPanel({ projectId, files, initialMessages, onApplyFiles }: P
                 )}
               >
                 🐝 Swarm
+              </button>
+              <button
+                type="button"
+                onClick={() => setDesignMode((v) => !v)}
+                aria-pressed={designMode}
+                title={
+                  designMode
+                    ? "Design mode — Loop leads with visual design (layout, colors, typography) and uses connected design tools like Figma. Turn off for regular building."
+                    : "Turn on Design mode — Loop focuses on polished UI design first and routes to the best design model."
+                }
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                  designMode
+                    ? "border-fuchsia-500 bg-fuchsia-500/10 text-foreground ring-1 ring-fuchsia-500"
+                    : "border-border text-muted-foreground hover:bg-accent",
+                )}
+              >
+                <Palette className="h-3.5 w-3.5" />
+                Design
               </button>
               <button
                 type="button"

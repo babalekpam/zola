@@ -69,7 +69,37 @@ const KEY_PREFIX: Partial<Record<ProviderId, string>> = {
   groq: "gsk_",
 };
 
+// Providers whose key turned out to be dead at call time (invalid, revoked, or
+// out of quota) are benched for a while so routing falls through to the next
+// candidate instead of failing every request on a known-bad key.
+const UNHEALTHY_MS = 10 * 60 * 1000;
+const unhealthyUntil = new Map<ProviderId, number>();
+
+export function markProviderUnhealthy(provider: ProviderId): void {
+  unhealthyUntil.set(provider, Date.now() + UNHEALTHY_MS);
+}
+
+/** Bench the provider when the error looks like a key/quota problem. */
+export function markProviderUnhealthyFromError(
+  modelId: string,
+  message: string,
+): ProviderId | null {
+  const descriptor = getModelById(modelId);
+  if (!descriptor) return null;
+  if (
+    /insufficient_quota|exceeded your current quota|invalid.?api.?key|incorrect api key|authentication|unauthorized|401|429/i.test(
+      message,
+    )
+  ) {
+    markProviderUnhealthy(descriptor.provider);
+    return descriptor.provider;
+  }
+  return null;
+}
+
 export function providerHasKey(provider: ProviderId): boolean {
+  const benched = unhealthyUntil.get(provider);
+  if (benched && benched > Date.now()) return false;
   const key = process.env[PROVIDER_ENV[provider]];
   if (!key) return false;
   const prefix = KEY_PREFIX[provider];

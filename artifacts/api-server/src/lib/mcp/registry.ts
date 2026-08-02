@@ -24,7 +24,7 @@ export interface McpCatalogEntry {
   name: string;
   /** One line, shown under the name in the picker. */
   description: string;
-  category: "universal" | "data" | "devtools" | "product" | "docs";
+  category: "universal" | "data" | "devtools" | "product" | "docs" | "design";
   transport: McpTransport;
   url: string;
   auth: McpAuthMode;
@@ -64,6 +64,31 @@ export const MCP_CATALOG: McpCatalogEntry[] = [
     credentialLabel: "Context7 API key (optional)",
     docsUrl: "https://context7.com",
     integration: "context7",
+  },
+  {
+    id: "figma",
+    name: "Figma",
+    description:
+      "Read design files, frames, components and variables straight from Figma.",
+    category: "design",
+    transport: "http",
+    url: "https://mcp.figma.com/mcp",
+    auth: "bearer",
+    credentialLabel: "Figma personal access token",
+    docsUrl: "https://help.figma.com/hc/en-us/articles/32132100833559",
+  },
+  {
+    id: "magic-21st",
+    name: "Magic (21st.dev)",
+    description:
+      "Generate polished UI components from a huge library of design patterns.",
+    category: "design",
+    transport: "http",
+    url: "https://mcp.21st.dev/mcp",
+    auth: "header",
+    authHeader: "x-api-key",
+    credentialLabel: "21st.dev Magic API key",
+    docsUrl: "https://21st.dev/magic",
   },
   {
     id: "deepwiki",
