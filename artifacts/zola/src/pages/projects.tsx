@@ -7,7 +7,7 @@ import { useProjects, useCreateProject, useDeleteProject } from "@/hooks/use-pro
 import { HomeDashboard } from "@/components/home/home-dashboard";
 
 export default function ProjectsPage() {
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const { activeOrgId } = useActiveOrg();
   const { data: projects, isLoading } = useProjects(activeOrgId);
@@ -64,7 +64,6 @@ export default function ProjectsPage() {
       onCreate={handleCreate}
       onOpenProject={(id) => setLocation(`/projects/${id}`)}
       onDeleteProject={(id) => deleteProject.mutate(id)}
-      onSignOut={signOut}
     />
   );
 }

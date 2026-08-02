@@ -49,7 +49,7 @@ const moonshot = () =>
 const xai = () =>
   openAICompatible("XAI_API_KEY", "https://api.x.ai/v1", "xai");
 
-const PROVIDER_ENV: Record<ProviderId, string> = {
+export const PROVIDER_ENV: Record<ProviderId, string> = {
   anthropic: "ANTHROPIC_API_KEY",
   openai: "OPENAI_API_KEY",
   google: "GOOGLE_GENERATIVE_AI_API_KEY",
@@ -69,7 +69,7 @@ const KEY_PREFIX: Partial<Record<ProviderId, string>> = {
   groq: "gsk_",
 };
 
-function providerHasKey(provider: ProviderId): boolean {
+export function providerHasKey(provider: ProviderId): boolean {
   const key = process.env[PROVIDER_ENV[provider]];
   if (!key) return false;
   const prefix = KEY_PREFIX[provider];

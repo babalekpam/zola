@@ -16,6 +16,10 @@ import collabRouter from "./collab";
 import referralRouter from "./referral";
 import orgsRouter from "./orgs";
 import analyticsRouter from "./analytics";
+import mcpRouter from "./mcp";
+import integrationsRouter from "./integrations";
+import aiConsoleRouter from "./ai-console";
+import workspaceOverviewRouter from "./workspace-overview";
 
 const router: IRouter = Router();
 
@@ -36,5 +40,9 @@ router.use(collabRouter);
 router.use(referralRouter);
 router.use(orgsRouter);
 router.use(analyticsRouter);
+router.use(mcpRouter);
+router.use(integrationsRouter);
+router.use(aiConsoleRouter);
+router.use(workspaceOverviewRouter);
 
 export default router;

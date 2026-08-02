@@ -11,6 +11,14 @@ import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
 import AuthCallbackPage from "@/pages/auth-callback";
 import ProjectsPage from "@/pages/projects";
+import PublishedPage from "@/pages/published";
+import IntegrationsPage from "@/pages/integrations";
+import AiConsolePage from "@/pages/ai-console";
+import SecurityPage from "@/pages/security";
+import PromotionsPage from "@/pages/promotions";
+import SettingsPage from "@/pages/settings";
+import LearnPage from "@/pages/learn";
+import DocsPage from "@/pages/docs";
 import ExplorePage from "@/pages/explore";
 import AdminPage from "@/pages/admin";
 import InvitePage from "@/pages/invite";
@@ -42,6 +50,14 @@ function AppRouter() {
       <Route path="/auth/callback" component={AuthCallbackPage} />
       <Route path="/projects" component={ProjectsPage} />
       <Route path="/explore" component={ExplorePage} />
+      <Route path="/published" component={PublishedPage} />
+      <Route path="/integrations" component={IntegrationsPage} />
+      <Route path="/ai-console" component={AiConsolePage} />
+      <Route path="/security" component={SecurityPage} />
+      <Route path="/promotions" component={PromotionsPage} />
+      <Route path="/settings" component={SettingsPage} />
+      <Route path="/learn" component={LearnPage} />
+      <Route path="/docs" component={DocsPage} />
       <Route path="/admin" component={AdminPage} />
       <Route path="/organization" component={OrganizationPage} />
       <Route path="/invite/:token" component={InvitePage} />
