@@ -5,6 +5,7 @@ import {
   pipeDataStreamToResponse,
   formatDataStreamPart,
   type CoreMessage,
+  type ToolSet,
 } from "ai";
 import {
   resolveAutoModel,
@@ -15,6 +16,13 @@ import { AUTO_MODEL_ID, DEFAULT_MODEL_ID } from "../lib/ai/models";
 import { checkAiQuota, recordAiUsage } from "../lib/ai/quota";
 import { buildSkillsSection, isSkillFile } from "../lib/ai/skills";
 import { startSwarm } from "../lib/ai/swarm";
+import {
+  buildMcpSection,
+  closeConnections,
+  connectMcpServers,
+  type McpConnection,
+  type McpServerRow,
+} from "../lib/mcp/client";
 import { createSupabaseServerClient } from "../lib/supabase";
 
 const router = Router();
@@ -23,6 +31,9 @@ const router = Router();
 const MAX_MESSAGES = 40;
 const MAX_MESSAGE_CHARS = 32_000;
 const MAX_CONTEXT_CHARS = 240_000;
+// Tool-call rounds per turn. High enough for a read → act → confirm sequence,
+// low enough that a looping model can't burn the user's quota.
+const MAX_TOOL_STEPS = 8;
 
 function lastUserText(messages: CoreMessage[]): string {
   const last = [...messages].reverse().find((m) => m.role === "user");
@@ -187,13 +198,45 @@ router.post("/chat", async (req, res) => {
     // --- Single-agent mode --------------------------------------------------
     const basePrompt = body.planMode ? PLANNING_SYSTEM_PROMPT : CODING_SYSTEM_PROMPT;
 
+    // MCP: dial the project's enabled tool servers and hand their tools to the
+    // model. Servers that don't answer are skipped rather than fatal — a dead
+    // third-party endpoint must not cost the user their chat turn.
+    let mcpConnections: McpConnection[] = [];
+    let mcpTools: ToolSet = {};
+    if (body.projectId) {
+      const { data: mcpRows } = await supabase
+        .from("project_mcp_servers")
+        .select("id, name, transport, url, headers")
+        .eq("project_id", body.projectId)
+        .eq("enabled", true);
+      if (mcpRows && mcpRows.length > 0) {
+        const connected = await connectMcpServers(mcpRows as McpServerRow[]);
+        mcpConnections = connected.connections;
+        mcpTools = connected.tools;
+        for (const failure of connected.failures) {
+          req.log.warn({ failure }, "mcp server unavailable");
+        }
+      }
+    }
+    const mcpSection = buildMcpSection(mcpConnections);
+    const hasTools = Object.keys(mcpTools).length > 0;
+
     const result = streamText({
       model,
-      system: basePrompt + projectContext,
+      system: basePrompt + projectContext + mcpSection,
       messages,
       temperature: 0.4,
-      async onFinish({ text, usage }) {
-        await saveAssistant(text, modelId);
+      ...(hasTools
+        ? { tools: mcpTools, maxSteps: MAX_TOOL_STEPS }
+        : {}),
+      async onFinish({ text, usage, steps }) {
+        await closeConnections(mcpConnections);
+        // With tools the answer spans several steps; the visible reply is every
+        // step's prose joined, not just the last one.
+        const full = steps?.length
+          ? steps.map((s) => s.text).filter(Boolean).join("\n\n")
+          : text;
+        await saveAssistant(full, modelId);
         await recordAiUsage([
           {
             userId,
@@ -205,6 +248,9 @@ router.post("/chat", async (req, res) => {
             completionTokens: usage?.completionTokens,
           },
         ]);
+      },
+      async onError() {
+        await closeConnections(mcpConnections);
       },
     });
 

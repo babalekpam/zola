@@ -917,3 +917,104 @@ create index if not exists project_likes_user_id_idx on public.project_likes (us
 -- messages_project_id_idx duplicated messages_project_created_idx (both btree
 -- (project_id, created_at)); the bootstrap above now creates only the latter.
 drop index if exists public.messages_project_id_idx;
+
+-- ============================================================================
+-- MCP servers (Model Context Protocol): per-project tool servers the Loop
+-- agent connects to during chat. Each row is one remote server; `headers`
+-- carries its auth (bearer tokens, API keys), so the table follows the same
+-- has_project_access rule as project_secrets — collaborators share them, the
+-- outside world never sees them (public projects expose files, not this).
+-- ============================================================================
+
+create table if not exists public.project_mcp_servers (
+  id              uuid primary key default gen_random_uuid(),
+  project_id      uuid not null references public.projects(id) on delete cascade,
+  name            text not null,
+  catalog_id      text,
+  transport       text not null default 'http' check (transport in ('http', 'sse')),
+  url             text not null,
+  headers         jsonb not null default '{}'::jsonb,
+  enabled         boolean not null default true,
+  tool_count      integer not null default 0,
+  last_error      text,
+  last_checked_at timestamptz,
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now(),
+  unique (project_id, name)
+);
+
+create index if not exists project_mcp_servers_project_idx
+  on public.project_mcp_servers(project_id);
+
+drop trigger if exists project_mcp_servers_touch on public.project_mcp_servers;
+create trigger project_mcp_servers_touch before update on public.project_mcp_servers
+  for each row execute function public.touch_updated_at();
+
+alter table public.project_mcp_servers enable row level security;
+
+drop policy if exists "mcp servers: via project" on public.project_mcp_servers;
+create policy "mcp servers: via project"
+  on public.project_mcp_servers for all
+  using (public.has_project_access(project_id))
+  with check (public.has_project_access(project_id));
+
+-- ============================================================================
+-- Integrations: account-level connections to third-party services (Rube,
+-- Supabase, Stripe, GitHub, Resend, …). `credentials` holds the API keys the
+-- user pasted, so this is strictly self-scoped — no org or member sharing.
+-- Attaching an integration to a project copies the credentials into that
+-- project's secrets and/or registers its MCP server; the link is recorded in
+-- project_integrations so the UI can show what's wired where.
+-- ============================================================================
+
+create table if not exists public.user_integrations (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid not null references auth.users(id) on delete cascade,
+  provider     text not null,
+  label        text not null default '',
+  credentials  jsonb not null default '{}'::jsonb,
+  status       text not null default 'connected' check (status in ('connected', 'error')),
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now(),
+  unique (user_id, provider)
+);
+
+create index if not exists user_integrations_user_idx on public.user_integrations(user_id);
+
+drop trigger if exists user_integrations_touch on public.user_integrations;
+create trigger user_integrations_touch before update on public.user_integrations
+  for each row execute function public.touch_updated_at();
+
+alter table public.user_integrations enable row level security;
+
+drop policy if exists "integrations: self" on public.user_integrations;
+create policy "integrations: self"
+  on public.user_integrations for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create table if not exists public.project_integrations (
+  id           uuid primary key default gen_random_uuid(),
+  project_id   uuid not null references public.projects(id) on delete cascade,
+  provider     text not null,
+  attached_by  uuid references auth.users(id) on delete set null,
+  mcp_server_id uuid references public.project_mcp_servers(id) on delete set null,
+  secret_keys  text[] not null default '{}',
+  created_at   timestamptz not null default now(),
+  unique (project_id, provider)
+);
+
+create index if not exists project_integrations_project_idx
+  on public.project_integrations(project_id);
+create index if not exists project_integrations_attached_by_idx
+  on public.project_integrations(attached_by);
+create index if not exists project_integrations_mcp_server_idx
+  on public.project_integrations(mcp_server_id);
+
+alter table public.project_integrations enable row level security;
+
+drop policy if exists "project integrations: via project" on public.project_integrations;
+create policy "project integrations: via project"
+  on public.project_integrations for all
+  using (public.has_project_access(project_id))
+  with check (public.has_project_access(project_id));

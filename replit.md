@@ -24,12 +24,16 @@ Zola is a Replit-style, AI-first coding platform: users describe an app in chat,
 
 - `artifacts/zola` — the main web app.
   - `src/lib/webcontainer/runtime.ts` — singleton WebContainer lifecycle owner (Run/Stop/Restart, console stream, shell spawning, deploy builds, env injection)
-  - `src/components/workspace/` — workspace UI: `workspace.tsx` (layout + state), `tool-pane.tsx` (Webview/Console/Shell/Secrets/DB/History/Deploy tabs), one file per pane
+  - `src/components/workspace/` — workspace UI: `workspace.tsx` (layout + state), `tool-pane.tsx` (Webview/Console/Shell/Secrets/Integrations/MCP/DB/History/Deploy tabs), one file per pane
+  - `src/components/dashboard/dashboard-shell.tsx` — the sidebar + nav shared by every signed-in dashboard page (`NAV_ITEMS` is the single source of truth for the sidebar)
   - `src/components/chat/` — AI chat (Loop agent); `src/components/editor/` — file tree, Monaco, tabs
   - `src/hooks/` — TanStack Query hooks per API resource (`use-secrets`, `use-snapshots`, `use-deployments`, `use-kv`, `use-presence`, …)
 - `artifacts/api-server` — Express API.
   - `src/routes/` — one router per resource; registered in `routes/index.ts` under `/api`
   - Public unauthenticated routes mounted at app level in `app.ts`: `/sites/:slug/*` (deployed sites) and `/db/:token/*` (key-value store for running apps, open CORS)
+  - `src/lib/mcp/` — MCP runtime: `registry.ts` (catalog of remote servers), `client.ts` (connect/probe/tool aggregation)
+  - `src/lib/integrations/catalog.ts` — the Integrations catalog (services → credential fields → env vars → MCP server)
+  - `src/lib/net/outbound-url.ts` — SSRF guard for user-supplied URLs the server fetches
   - `supabase-schema.sql` — append-only, idempotent schema + RLS; apply to Supabase via the pooler (see .agents/memory)
 - `artifacts/zola-mobile`, `artifacts/mockup-sandbox` — secondary artifacts
 - `lib/` — shared API spec/codegen packages
@@ -46,6 +50,10 @@ Zola is a Replit-style, AI-first coding platform: users describe an app in chat,
 
 - Home dashboard: create from templates (todo, landing, dashboard, snake, portfolio, blog, Express API), import from GitHub, attach reference docs (PDF/Word), organizations/workspaces, referrals, billing (Stripe).
 - Workspace: AI chat (multi-model, plan mode, voice input), file tree + Monaco editor, Run/Stop/Restart, Webview with address bar, Console, interactive Shell, Secrets, key-value Database, History (checkpoints + restore), Deploy (public static hosting), Git (push/export to GitHub), live presence avatars + live file sync between collaborators (last-write-wins per file).
+- Integrations (`/integrations`): account-level connections to ~24 services (Rube/Composio, Supabase, Neon, Upstash, Stripe, Paystack, Clerk, Resend, Twilio, Slack, GitHub, Vercel, Sentry, Linear, Notion, OpenAI, Anthropic, Hugging Face, ElevenLabs, PostHog, Algolia, Cloudinary, Mapbox, Context7). Credentials live in `user_integrations` (self-only RLS) and never return to the browser. Attaching one to a project (workspace Integrations tab) upserts its credentials into `project_secrets` under the catalog's env var names and, when the service has an MCP server, registers it — detaching removes the MCP server but keeps the secrets.
+- MCP (Model Context Protocol): per-project remote tool servers in `project_mcp_servers`, managed from the workspace MCP tab (catalog add, custom URL + auth header, enable/disable, "Test connection" listing the server's tools). The chat route dials every enabled server per turn via `experimental_createMCPClient` (SSE inline; Streamable HTTP through `@modelcontextprotocol/sdk`), merges their tools into `streamText` with `maxSteps: 8`, and closes the connections in `onFinish`/`onError`. Bounded everywhere: 10 servers/project, 40 tools/server, 80 tools/turn, 8s connect timeout, and a failed server is skipped rather than fatal. URLs must be https and non-private (`assertSafeOutboundUrl`).
+- AI Console (`/ai-console`): provider key availability, the full model catalog, the Auto routing table (candidates in order with the winner marked), monthly quota, and usage charts by day/model/project from `ai_usage`.
+- Dashboard pages behind the sidebar: `/published` (deployed sites with domains + traffic), `/security` (cross-project exposure: public projects, secret counts, enabled MCP servers, collaborators), `/promotions` (referrals + plans), `/settings`, `/learn`, `/docs`.
 - Community: projects can be made public in settings; `/explore` lists them (works logged out) with like counts, and anyone can Remix (fork) one into their active workspace. Dashboard shows a categorized template gallery (11 templates) and per-card Duplicate.
 - Custom domains: orgs link their own domain to a project's deployment in the Deploy tab (DNS TXT challenge `_zola-challenge.<domain>` + CNAME); verified domains are served by Host header via `customDomainMiddleware`. TLS for custom domains terminates at the fronting infra (Cloudflare/Cloud Run domain mapping/Caddy) — the app only routes by Host.
 - AI engine: 9 providers (Anthropic, OpenAI, Google, Groq, DeepSeek direct, Qwen/DashScope, Moonshot/Kimi, NVIDIA, OpenRouter) on PLATFORM keys only — no BYOK, AI is resold. "Auto" model routes each request by task (design/code/plan/quick heuristic in `lib/ai/models.ts` `TASK_ROUTES`, availability-aware). Swarm mode (chat 🐝 toggle): architect model decomposes into ≤4 parallel specialist tasks with disjoint file ownership, each on its task's best model, merged into one streamed response (`lib/ai/swarm.ts`). Every model call is metered in `ai_usage`; monthly quotas per plan (`aiMonthly` in plans.ts: 300/5k/20k) enforced in the chat route (402 when exhausted, fails open without service role).
@@ -59,11 +67,13 @@ Zola is a Replit-style, AI-first coding platform: users describe an app in chat,
 
 ## Gotchas
 
-- `supabase-schema.sql` changes must be applied to the live Supabase project manually (pooler connection; direct host is IPv6-only). New since last apply: tables `project_secrets`, `project_snapshots`, `deployments`, `deployment_files`, `project_kv`, `project_db_tokens`; `projects.visibility` + `projects.github_repo` columns and public-read policies.
+- `supabase-schema.sql` changes must be applied to the live Supabase project manually (pooler connection; direct host is IPv6-only). New since last apply: tables `project_secrets`, `project_snapshots`, `deployments`, `deployment_files`, `project_kv`, `project_db_tokens`, `project_mcp_servers`, `user_integrations`, `project_integrations`; `projects.visibility` + `projects.github_repo` columns and public-read policies.
 - The KV capability token must NEVER be a readable column on `projects` — public projects are world-readable and the token grants writes. It lives in `project_db_tokens` (RLS on, no policies, service-role only) and is only returned by GET /api/projects/:id to users passing `has_project_access`.
 - WebContainer needs cross-origin isolation (COOP/COEP headers in `vite.config.ts`) and an API key (`VITE_WEBCONTAINER_API_KEY`) on non-localhost origins.
 - Express 5 route syntax: wildcards are named (`/sites/:slug{/*splat}`); `*splat` alone requires ≥1 segment.
 - `express.json` limit is raised to 30 MB for deployment uploads; `/db` uses `express.text` and is mounted before the credentialed CORS policy.
+- MCP servers are dialled on every chat turn; there is no connection pool. Keep the per-server timeouts in `lib/mcp/client.ts` low — they sit on the critical path of the user's first token.
+- `project_mcp_servers.headers` holds live credentials. Never widen the redaction in `routes/mcp.ts` — the API returns header *names* only.
 - Keep every AI SDK package on the same generation (see `.agents/memory/ai-sdk-version-alignment.md`).
 
 ## Pointers

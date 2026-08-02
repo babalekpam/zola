@@ -2,20 +2,9 @@
 import { useRef, useState } from "react";
 import { Link } from "wouter";
 import {
-  Search,
   Plus,
-  Compass,
-  Download,
-  UserPlus,
-  Home,
-  FolderClosed,
   Globe,
   Blocks,
-  Shield,
-  Megaphone,
-  GraduationCap,
-  BookOpen,
-  Gift,
   ArrowUp,
   Mic,
   Paperclip,
@@ -32,16 +21,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatRelativeTime } from "@/lib/utils";
-import { cn } from "@/lib/utils";
 import type { Project } from "@/lib/types";
 import { readAttachment } from "@/lib/read-attachment";
 import { useSamples } from "@/hooks/use-projects";
-import { useIsAdmin } from "@/hooks/use-admin";
 import { useForkProject } from "@/hooks/use-explore";
 import { useActiveOrg } from "@/hooks/use-active-org";
-import { ImportDialog } from "./import-dialog";
-import { ReferEarnDialog } from "./refer-earn-dialog";
-import { WorkspaceSwitcher } from "./workspace-switcher";
+import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 
 interface Props {
   userName: string;
@@ -58,20 +43,8 @@ interface Props {
   ) => void;
   onOpenProject: (id: string) => void;
   onDeleteProject: (id: string) => void;
-  onSignOut: () => void;
 }
 
-const NAV_ITEMS = [
-  { icon: Home, label: "Home", href: "/projects", active: true },
-  { icon: FolderClosed, label: "Projects", href: "/projects" },
-  { icon: Compass, label: "Explore", href: "/explore" },
-  { icon: Globe, label: "Published Projects", href: "/projects" },
-  { icon: Blocks, label: "Integrations", href: "/account" },
-  { icon: Shield, label: "Security", href: "/account" },
-  { icon: Megaphone, label: "Promotions", href: "/billing" },
-  { icon: GraduationCap, label: "Learn", href: "/about" },
-  { icon: BookOpen, label: "Documentation", href: "/about" },
-];
 
 const TEMPLATES = [
   { icon: Globe, label: "Website", prompt: "Build a website" },
@@ -96,18 +69,14 @@ export function HomeDashboard({
   onCreate,
   onOpenProject,
   onDeleteProject,
-  onSignOut,
 }: Props) {
   const [prompt, setPrompt] = useState("");
-  const [importOpen, setImportOpen] = useState(false);
-  const [referOpen, setReferOpen] = useState(false);
   const [attachments, setAttachments] = useState<
     { path: string; content: string }[]
   >([]);
   const [reading, setReading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { data: samples } = useSamples();
-  const { data: isAdmin } = useIsAdmin();
   const { activeOrgId } = useActiveOrg();
   const forkProject = useForkProject();
 
@@ -161,104 +130,11 @@ export function HomeDashboard({
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground">
-      {/* Sidebar */}
-      <aside className="flex w-60 shrink-0 flex-col border-r border-border bg-card/40">
-        <div className="flex items-center justify-between px-3 py-3">
-          <WorkspaceSwitcher />
-          <button
-            type="button"
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-            aria-label="Search"
-          >
-            <Search className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="space-y-1.5 px-3">
-          <button
-            type="button"
-            onClick={() => onCreate()}
-            disabled={creating}
-            className="flex w-full items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent disabled:opacity-50"
-          >
-            <Plus className="h-4 w-4" /> Create something new
-          </button>
-          <button
-            type="button"
-            onClick={() => setImportOpen(true)}
-            className="flex w-full items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent"
-          >
-            <Download className="h-4 w-4" /> Import code or design
-          </button>
-          <Link
-            href="/organization"
-            className="flex w-full items-center justify-between rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
-          >
-            <span className="flex items-center gap-2">
-              <UserPlus className="h-4 w-4" /> Invite
-            </span>
-          </Link>
-        </div>
-
-        <nav className="mt-3 flex-1 space-y-0.5 overflow-y-auto px-3">
-          {NAV_ITEMS.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm",
-                item.active
-                  ? "bg-accent font-medium text-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
-              )}
-            >
-              <item.icon className="h-4 w-4" />
-              {item.label}
-            </Link>
-          ))}
-
-          {isAdmin && (
-            <>
-              <div className="mx-3 my-2 border-t border-border" />
-              <Link
-                href="/admin"
-                className="flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm font-medium text-primary hover:bg-accent"
-              >
-                <Shield className="h-4 w-4" />
-                Super admin
-              </Link>
-            </>
-          )}
-        </nav>
-
-        <div className="p-3">
-          <div className="rounded-lg border border-border bg-background p-3">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <Gift className="h-4 w-4 text-primary" /> Invite a friend, earn $20
-            </div>
-            <button
-              type="button"
-              onClick={() => setReferOpen(true)}
-              className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90"
-            >
-              <Gift className="h-3.5 w-3.5" /> Refer &amp; Earn
-            </button>
-            <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
-              You'll both get credits when they upgrade to a paid plan.
-            </p>
-          </div>
-          <div className="mt-3 flex items-center justify-between px-1 text-[11px] text-muted-foreground">
-            <button type="button" onClick={onSignOut} className="hover:text-foreground">
-              Sign out
-            </button>
-            <span>Changelog</span>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main */}
-      <main className="relative flex-1 overflow-y-auto">
+    <DashboardShell
+      active="Home"
+      onCreate={() => onCreate()}
+      creating={creating}
+    >
         <div className="mx-auto flex min-h-full max-w-3xl flex-col px-6 pb-16 pt-24">
           <h1 className="text-center text-3xl font-semibold tracking-tight">
             Hi {userName}, what do you want to make?
@@ -527,10 +403,6 @@ export function HomeDashboard({
             )}
           </div>
         </div>
-      </main>
-
-      <ImportDialog open={importOpen} onOpenChange={setImportOpen} />
-      <ReferEarnDialog open={referOpen} onOpenChange={setReferOpen} />
-    </div>
+    </DashboardShell>
   );
 }

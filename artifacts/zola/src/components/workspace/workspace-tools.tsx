@@ -8,8 +8,12 @@ const GROUPS: { heading: string; tools: Tool[] }[] = [
     tools: ["deploy", "domains", "database", "monitoring"],
   },
   {
+    heading: "Agent",
+    tools: ["integrations", "mcp", "skills"],
+  },
+  {
     heading: "Setup",
-    tools: ["skills", "git", "secrets", "security", "history"],
+    tools: ["git", "secrets", "security", "history"],
   },
 ];
 

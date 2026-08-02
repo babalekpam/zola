@@ -3,12 +3,14 @@ import { useEffect, useState } from "react";
 import {
   Activity,
   AppWindow,
+  Blocks,
   BookOpen,
   Database,
   GitBranch,
   Globe,
   History,
   KeyRound,
+  Plug,
   Rocket,
   ShieldCheck,
   SquareTerminal,
@@ -26,6 +28,8 @@ import { GitPane } from "@/components/workspace/git-pane";
 import { DomainsPane } from "@/components/workspace/domains-pane";
 import { MonitoringPane } from "@/components/workspace/monitoring-pane";
 import { SkillsPane } from "@/components/workspace/skills-pane";
+import { McpPane } from "@/components/workspace/mcp-pane";
+import { IntegrationsPane } from "@/components/workspace/integrations-pane";
 import { cn } from "@/lib/utils";
 import type { Project } from "@/lib/types";
 
@@ -41,7 +45,9 @@ export type Tool =
   | "git"
   | "domains"
   | "monitoring"
-  | "skills";
+  | "skills"
+  | "integrations"
+  | "mcp";
 
 export const TOOL_META: Record<Tool, { label: string; icon: typeof AppWindow }> = {
   webview: { label: "Webview", icon: AppWindow },
@@ -56,6 +62,8 @@ export const TOOL_META: Record<Tool, { label: string; icon: typeof AppWindow }> 
   domains: { label: "Domains", icon: Globe },
   monitoring: { label: "Monitoring", icon: Activity },
   skills: { label: "Skills", icon: BookOpen },
+  integrations: { label: "Integrations", icon: Blocks },
+  mcp: { label: "MCP", icon: Plug },
 };
 
 const TABS: Tool[] = [
@@ -69,6 +77,8 @@ const TABS: Tool[] = [
   "deploy",
   "domains",
   "monitoring",
+  "integrations",
+  "mcp",
   "skills",
   "git",
 ];
@@ -206,6 +216,16 @@ export function ToolPane({
               onDeleteFile={onDeleteFile}
               onOpenFile={onOpenFile}
             />
+          </div>
+        )}
+        {opened.has("integrations") && (
+          <div className={cn("absolute inset-0", active !== "integrations" && "hidden")}>
+            <IntegrationsPane projectId={projectId} />
+          </div>
+        )}
+        {opened.has("mcp") && (
+          <div className={cn("absolute inset-0", active !== "mcp" && "hidden")}>
+            <McpPane projectId={projectId} />
           </div>
         )}
         {opened.has("git") && (
