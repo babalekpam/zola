@@ -71,6 +71,7 @@ export function HomeDashboard({
   onDeleteProject,
 }: Props) {
   const [prompt, setPrompt] = useState("");
+  const [mode, setMode] = useState<"build" | "design">("build");
   const [attachments, setAttachments] = useState<
     { path: string; content: string }[]
   >([]);
@@ -124,7 +125,11 @@ export function HomeDashboard({
 
   function submitPrompt() {
     const trimmed = prompt.trim();
-    onCreate(trimmed || undefined, {
+    const finalPrompt =
+      mode === "design" && trimmed
+        ? `Design mode — focus on the visual design first: create a polished UI mockup (layout, colors, typography) before any functionality.\n\n${trimmed}`
+        : trimmed;
+    onCreate(finalPrompt || undefined, {
       attachments: attachments.length ? attachments : undefined,
     });
   }
@@ -158,7 +163,11 @@ export function HomeDashboard({
                 }
               }}
               rows={2}
-              placeholder="Make a launch video about..."
+              placeholder={
+                mode === "design"
+                  ? "Design a landing page for..."
+                  : "Make a launch video about..."
+              }
               className="w-full resize-none bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground"
             />
             {attachments.length > 0 && (
@@ -213,6 +222,31 @@ export function HomeDashboard({
                 )}
               </button>
               <div className="flex items-center gap-1.5">
+                <div className="flex items-center rounded-full border border-border p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setMode("build")}
+                    className={`rounded-full px-2.5 py-0.5 text-xs transition-colors ${
+                      mode === "build"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Build
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMode("design")}
+                    className={`flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs transition-colors ${
+                      mode === "design"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Palette className="h-3 w-3" />
+                    Design
+                  </button>
+                </div>
                 <button
                   type="button"
                   className="flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground hover:bg-accent"
