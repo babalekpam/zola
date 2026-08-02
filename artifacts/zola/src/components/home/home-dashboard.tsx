@@ -286,7 +286,15 @@ export function HomeDashboard({
                 <button
                   key={t.label}
                   type="button"
-                  onClick={() => onCreate(t.prompt)}
+                  onClick={() => {
+                    // Every create path decides the workspace mode explicitly
+                    // so a stale flag from a previous session can't leak in.
+                    localStorage.setItem(
+                      "loop_design_mode",
+                      String(t.label === "Design"),
+                    );
+                    onCreate(t.prompt);
+                  }}
                   className="flex w-24 flex-col items-center gap-2 rounded-xl border border-border bg-card px-3 py-4 text-center hover:border-primary/50 hover:bg-accent"
                 >
                   <t.icon className="h-5 w-5 text-muted-foreground" />
@@ -349,7 +357,10 @@ export function HomeDashboard({
                     </p>
                     <button
                       type="button"
-                      onClick={() => onCreate(s.name, { template: s.id })}
+                      onClick={() => {
+                        localStorage.setItem("loop_design_mode", "false");
+                        onCreate(s.name, { template: s.id });
+                      }}
                       disabled={creating}
                       className="mt-3 inline-flex items-center justify-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent disabled:opacity-50"
                     >

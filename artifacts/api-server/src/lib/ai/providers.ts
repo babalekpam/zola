@@ -87,7 +87,7 @@ export function markProviderUnhealthyFromError(
   const descriptor = getModelById(modelId);
   if (!descriptor) return null;
   if (
-    /insufficient_quota|exceeded your current quota|invalid.?api.?key|incorrect api key|authentication|unauthorized|401|429/i.test(
+    /insufficient_quota|exceeded your current quota|invalid.?api.?key|incorrect api key|authentication failed|unauthorized|\b401\b|\b429\b|rate limit/i.test(
       message,
     )
   ) {

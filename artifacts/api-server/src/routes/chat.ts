@@ -269,10 +269,10 @@ router.post("/chat", async (req, res) => {
     });
 
     result.pipeDataStreamToResponse(res, {
-      getErrorMessage: (error) => {
-        const message = error instanceof Error ? error.message : String(error);
-        return `Model ${modelId} failed: ${message.slice(0, 300)}. Try again — a failing provider is skipped for a few minutes — or pick another model.`;
-      },
+      // Never echo the raw provider/tool error to the client — upstream
+      // messages can contain request metadata. Details stay in server logs.
+      getErrorMessage: () =>
+        `The ${modelId} request failed. Try again — a failing provider is skipped for a few minutes — or pick another model.`,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
