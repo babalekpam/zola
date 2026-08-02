@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "Zola"
+title = "loop"
 version = "1.0.0"
 id = "artifacts/zola"
 router = "path"
