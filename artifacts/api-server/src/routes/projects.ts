@@ -393,12 +393,7 @@ function starterFiles(): Record<string, string> {
   return {
     ...baseFiles(),
     "src/App.tsx": `export default function App() {
-  return (
-    <main style={{ fontFamily: "system-ui", padding: 48, textAlign: "center" }}>
-      <h1>Hello from Zola</h1>
-      <p>Ask the AI on the left to build something.</p>
-    </main>
-  );
+  return null;
 }
 `,
   };
