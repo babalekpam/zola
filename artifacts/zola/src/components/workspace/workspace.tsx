@@ -316,6 +316,7 @@ export function Workspace({ project, initialFiles, initialMessages }: Props) {
                     path={activePath}
                     value={files[activePath] ?? ""}
                     onChange={(v) => updateFile(activePath, v)}
+                    projectId={project.id}
                   />
                 ) : (
                   <div className="flex h-full items-center justify-center text-sm text-muted-foreground">

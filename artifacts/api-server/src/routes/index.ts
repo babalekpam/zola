@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
 import chatRouter from "./chat";
+import aiCompleteRouter from "./ai-complete";
 import projectsRouter from "./projects";
 import secretsRouter from "./secrets";
 import snapshotsRouter from "./snapshots";
@@ -25,6 +26,7 @@ const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(chatRouter);
+router.use(aiCompleteRouter);
 router.use(projectsRouter);
 router.use(secretsRouter);
 router.use(snapshotsRouter);

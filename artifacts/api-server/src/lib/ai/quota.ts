@@ -54,7 +54,7 @@ export interface UsageRecord {
   orgId?: string | null;
   projectId?: string | null;
   modelId: string;
-  kind: "chat" | "swarm-architect" | "swarm-worker";
+  kind: "chat" | "swarm-architect" | "swarm-worker" | "completion" | "inline-edit";
   promptTokens?: number;
   completionTokens?: number;
 }
