@@ -29,6 +29,12 @@ function asUuid(value: string | null | undefined): string | null {
   return typeof value === "string" && UUID_RE.test(value) ? value : null;
 }
 
+/** True on a real deployment (Replit Autoscale sets REPLIT_DEPLOYMENT; other
+ *  hosts set NODE_ENV=production). Local dev and preview sandboxes are neither. */
+function isDeployed(): boolean {
+  return process.env.NODE_ENV === "production" || !!process.env.REPLIT_DEPLOYMENT;
+}
+
 /** Human-readable reason for a rejected quota check (402 body). */
 export function quotaErrorMessage(quota: QuotaResult): string {
   if (quota.limit <= 0) {
@@ -46,7 +52,7 @@ export function quotaErrorMessage(quota: QuotaResult): string {
 export async function checkAiQuota(userId: string): Promise<QuotaResult> {
   const admin = createSupabaseAdminClient();
   if (!admin) {
-    if (process.env.NODE_ENV === "production") {
+    if (isDeployed()) {
       return { allowed: false, used: 0, limit: 0, plan: "unconfigured" };
     }
     return { allowed: true, used: 0, limit: 0, plan: "dev" };
