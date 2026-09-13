@@ -19,14 +19,38 @@ function monthStart(): string {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
 }
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Only well-formed UUIDs reach the usage table: a malformed id would make the
+ *  insert fail, and a failed (best-effort) insert would leave the call
+ *  unmetered — a way around the monthly quota. */
+function asUuid(value: string | null | undefined): string | null {
+  return typeof value === "string" && UUID_RE.test(value) ? value : null;
+}
+
+/** Human-readable reason for a rejected quota check (402 body). */
+export function quotaErrorMessage(quota: QuotaResult): string {
+  if (quota.limit <= 0) {
+    return "AI features require a paid plan. Upgrade to Pro or Team to build with AI.";
+  }
+  return `Monthly AI limit reached (${quota.used}/${quota.limit} on the ${quota.plan} plan). Upgrade your plan to keep building.`;
+}
+
 /**
- * Check the caller's monthly AI budget. Fails OPEN when the service role is
- * not configured (dev environments) — quota is a billing control, not a
- * security boundary.
+ * Check the caller's monthly AI budget. Plans with no AI budget (Free) are
+ * rejected before any usage rows are read. Without the service role the plan
+ * cannot be determined: dev environments fail open, production fails closed
+ * so a missing key can never hand out unmetered AI.
  */
 export async function checkAiQuota(userId: string): Promise<QuotaResult> {
   const admin = createSupabaseAdminClient();
-  if (!admin) return { allowed: true, used: 0, limit: 0, plan: "free" };
+  if (!admin) {
+    if (process.env.NODE_ENV === "production") {
+      return { allowed: false, used: 0, limit: 0, plan: "unconfigured" };
+    }
+    return { allowed: true, used: 0, limit: 0, plan: "dev" };
+  }
 
   const { data: sub } = await admin
     .from("subscriptions")
@@ -38,6 +62,9 @@ export async function checkAiQuota(userId: string): Promise<QuotaResult> {
       ? sub.plan
       : "free";
   const plan = getPlan(planId);
+  if (plan.aiMonthly <= 0) {
+    return { allowed: false, used: 0, limit: 0, plan: plan.id };
+  }
 
   const { count } = await admin
     .from("ai_usage")
@@ -68,8 +95,8 @@ export async function recordAiUsage(records: UsageRecord[]): Promise<void> {
     .insert(
       records.map((r) => ({
         user_id: r.userId,
-        org_id: r.orgId ?? null,
-        project_id: r.projectId ?? null,
+        org_id: asUuid(r.orgId),
+        project_id: asUuid(r.projectId),
         model_id: r.modelId,
         kind: r.kind,
         prompt_tokens: Number.isFinite(r.promptTokens) ? r.promptTokens : 0,

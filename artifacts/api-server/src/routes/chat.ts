@@ -15,7 +15,7 @@ import {
 } from "../lib/ai/providers";
 import { CODING_SYSTEM_PROMPT, DESIGN_SYSTEM_PROMPT, PLANNING_SYSTEM_PROMPT } from "../lib/ai/system-prompt";
 import { AUTO_MODEL_ID, DEFAULT_MODEL_ID } from "../lib/ai/models";
-import { checkAiQuota, recordAiUsage } from "../lib/ai/quota";
+import { checkAiQuota, quotaErrorMessage, recordAiUsage } from "../lib/ai/quota";
 import { buildSkillsSection, isSkillFile } from "../lib/ai/skills";
 import { startSwarm } from "../lib/ai/swarm";
 import {
@@ -66,9 +66,7 @@ router.post("/chat", async (req, res) => {
 
     const quota = await checkAiQuota(userId);
     if (!quota.allowed) {
-      res.status(402).json({
-        error: `Monthly AI limit reached (${quota.used}/${quota.limit} on the ${quota.plan} plan). Upgrade your plan to keep building.`,
-      });
+      res.status(402).json({ error: quotaErrorMessage(quota) });
       return;
     }
 

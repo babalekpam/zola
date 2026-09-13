@@ -5,7 +5,7 @@ import {
   resolveTaskModel,
   markProviderUnhealthyFromError,
 } from "../lib/ai/providers";
-import { checkAiQuota, recordAiUsage } from "../lib/ai/quota";
+import { checkAiQuota, quotaErrorMessage, recordAiUsage } from "../lib/ai/quota";
 import { createSupabaseServerClient } from "../lib/supabase";
 
 const router = Router();
@@ -37,6 +37,14 @@ async function guardInlineAi(
   }
   const userId = userData.user.id;
 
+  // Plan quota first: accounts with no AI budget (Free) are turned away
+  // before the burst limiter spends a usage_log row on them.
+  const quota = await checkAiQuota(userId);
+  if (!quota.allowed) {
+    res.status(402).json({ error: quotaErrorMessage(quota) });
+    return null;
+  }
+
   const { data: allowed, error: rateErr } = await supabase.rpc(
     "check_chat_rate_limit",
     { p_user_id: userId },
@@ -47,14 +55,6 @@ async function guardInlineAi(
     res
       .status(429)
       .json({ error: "Rate limit exceeded. Please wait a minute and try again." });
-    return null;
-  }
-
-  const quota = await checkAiQuota(userId);
-  if (!quota.allowed) {
-    res.status(402).json({
-      error: `Monthly AI limit reached (${quota.used}/${quota.limit} on the ${quota.plan} plan). Upgrade your plan to keep building.`,
-    });
     return null;
   }
   return { supabase, userId };
@@ -144,10 +144,10 @@ router.post("/ai/complete", async (req, res) => {
       res.status(502).json({ error: "Completion failed. Try again in a moment." });
     }
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
+    // Never echo internal error text to the client; details stay in logs.
     req.log.error({ err }, "ai/complete route error");
     if (!res.headersSent) {
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: "Completion is unavailable right now." });
     }
   }
 });
@@ -227,10 +227,9 @@ router.post("/ai/inline-edit", async (req, res) => {
       res.status(502).json({ error: "Inline edit failed. Try again in a moment." });
     }
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
     req.log.error({ err }, "ai/inline-edit route error");
     if (!res.headersSent) {
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: "Inline edit is unavailable right now." });
     }
   }
 });

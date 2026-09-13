@@ -92,7 +92,10 @@ export default function BillingPage() {
 
       <h1 className="text-2xl font-semibold">Billing</h1>
       <p className="text-sm text-muted-foreground">
-        You're on the <strong>{current.name}</strong> plan · {current.chatPerMinute} AI requests / minute
+        You're on the <strong>{current.name}</strong> plan ·{" "}
+        {current.aiMonthly > 0
+          ? `${current.chatPerMinute} AI requests / minute`
+          : "AI features require a paid plan"}
         {sub?.current_period_end ? (
           <> · renews {new Date(sub.current_period_end).toLocaleDateString()}{sub.cancel_at_period_end ? " (cancellation pending)" : ""}</>
         ) : null}

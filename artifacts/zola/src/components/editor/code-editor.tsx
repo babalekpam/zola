@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Argilette Lab. SPDX-License-Identifier: MIT
 import { lazy, Suspense, useEffect, useRef } from "react";
 import type { Monaco, OnMount } from "@monaco-editor/react";
-import { fetchCompletion, fetchInlineEdit } from "@/hooks/use-ai-complete";
+import { AiHttpError, fetchCompletion, fetchInlineEdit } from "@/hooks/use-ai-complete";
 
 const MonacoEditor = lazy(() =>
   import("@monaco-editor/react").then((m) => ({ default: m.Editor })),
@@ -42,6 +42,10 @@ function disableDiagnostics(monaco: Monaco) {
 const PREFIX_CHARS = 8_000;
 const SUFFIX_CHARS = 2_000;
 const COMPLETION_DEBOUNCE_MS = 350;
+// After a 429 the provider stays quiet this long; after a 402 (no AI budget
+// on the account's plan) it stays off for the rest of the editor's life so a
+// free account never sends a request per keystroke.
+const RATE_LIMIT_BACKOFF_MS = 60_000;
 
 function delay(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -77,9 +81,14 @@ export function CodeEditor({ path, value, onChange, projectId }: Props) {
   const disposablesRef = useRef<{ dispose(): void }[]>([]);
   // Latest request wins: each new keystroke aborts/supersedes the previous
   // completion so ghost text never arrives stale.
-  const completionRef = useRef<{ seq: number; abort: AbortController | null }>({
+  const completionRef = useRef<{
+    seq: number;
+    abort: AbortController | null;
+    pausedUntil: number;
+  }>({
     seq: 0,
     abort: null,
+    pausedUntil: 0,
   });
   const inlineSessionRef = useRef<InlineEditSession | null>(null);
 
@@ -216,9 +225,12 @@ export function CodeEditor({ path, value, onChange, projectId }: Props) {
         inlineSessionRef.current = session;
         showReviewWidget(editor, monaco, startLine, session);
         editor.focus();
-      } catch {
-        closeInput();
-        editor.focus();
+      } catch (err) {
+        // Keep the prompt open and say why (no AI on this plan, rate limit,
+        // provider outage) so the user isn't left guessing.
+        input.disabled = false;
+        status.textContent =
+          err instanceof Error && err.message ? err.message : "Edit failed. Try again.";
       }
     };
 
@@ -272,6 +284,7 @@ export function CodeEditor({ path, value, onChange, projectId }: Props) {
                   if (!prefix.trim() && !suffix.trim()) return { items: [] };
 
                   const state = completionRef.current;
+                  if (Date.now() < state.pausedUntil) return { items: [] };
                   state.abort?.abort();
                   const ac = new AbortController();
                   const seq = ++state.seq;
@@ -279,15 +292,26 @@ export function CodeEditor({ path, value, onChange, projectId }: Props) {
                   await delay(COMPLETION_DEBOUNCE_MS);
                   if (state.seq !== seq) return { items: [] };
 
-                  const completion = await fetchCompletion(
-                    {
-                      prefix,
-                      suffix,
-                      language: getLanguage(latestRef.current.path),
-                      projectId: latestRef.current.projectId,
-                    },
-                    ac.signal,
-                  );
+                  let completion: string;
+                  try {
+                    completion = await fetchCompletion(
+                      {
+                        prefix,
+                        suffix,
+                        language: getLanguage(latestRef.current.path),
+                        projectId: latestRef.current.projectId,
+                      },
+                      ac.signal,
+                    );
+                  } catch (err) {
+                    if (err instanceof AiHttpError) {
+                      if (err.status === 402) state.pausedUntil = Number.POSITIVE_INFINITY;
+                      else if (err.status === 429) {
+                        state.pausedUntil = Date.now() + RATE_LIMIT_BACKOFF_MS;
+                      }
+                    }
+                    return { items: [] };
+                  }
                   if (!completion || state.seq !== seq) return { items: [] };
 
                   const lines = completion.split("\n");

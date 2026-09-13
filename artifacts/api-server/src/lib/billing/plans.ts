@@ -18,15 +18,17 @@ export const PLANS: Plan[] = [
     id: "free",
     name: "Free",
     priceMonthly: 0,
-    blurb: "Try Zola, no card required.",
+    blurb: "Browse and manage projects. AI building requires a paid plan.",
     features: [
-      "300 AI requests per month",
-      "Auto model routing (best model per task)",
+      "No AI requests — upgrade to build with AI",
       "Unlimited projects",
       "Community support",
     ],
-    chatPerMinute: 15,
-    aiMonthly: 300,
+    // Free accounts never spend platform AI credit: every AI call costs real
+    // money on the platform's provider keys, so the budget is zero and the
+    // quota gate rejects the call before any provider is contacted.
+    chatPerMinute: 0,
+    aiMonthly: 0,
   },
   {
     id: "pro",
@@ -35,8 +37,8 @@ export const PLANS: Plan[] = [
     blurb: "For serious builders shipping side projects.",
     features: [
       "5,000 AI requests per month",
+      "Auto model routing (best model per task)",
       "Agent swarm mode",
-      "All Free features",
       "Email support",
     ],
     chatPerMinute: 60,
