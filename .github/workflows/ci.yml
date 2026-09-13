@@ -14,24 +14,32 @@ jobs:
     timeout-minutes: 15
 
     env:
-      NEXT_TELEMETRY_DISABLED: "1"
-      # Dummy values so the build doesn't fail on missing env vars
+      # Dummy values so builds don't fail on missing env vars.
       NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co"
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "dummy"
+      # artifacts/zola/vite.config.ts requires both at config load.
+      PORT: "3000"
+      BASE_PATH: "/"
 
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: "22"
+          cache: "pnpm"
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: pnpm install --frozen-lockfile
 
       - name: Type-check
-        run: npm run typecheck
+        run: pnpm run typecheck
 
+      # zola-mobile's "build" starts an Expo dev server and waits for Metro
+      # (a Replit-dev script, not a CI artifact); it is still type-checked.
       - name: Build
-        run: npm run build
+        run: pnpm -r --filter "./artifacts/**" --filter "!@workspace/zola-mobile" --if-present run build

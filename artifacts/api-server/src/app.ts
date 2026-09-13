@@ -107,6 +107,32 @@ app.use(
   }),
 );
 
+// CSRF guard. Browsers send Origin on every cross-site request and on
+// same-origin non-GET requests, so on a deployment a state-changing /api call
+// whose Origin is neither this host nor an allowed frontend origin is refused
+// before any body is parsed. Requests without Origin (server-to-server, curl,
+// the mobile app with bearer tokens) are unaffected. The Stripe webhook is
+// exempt: it is signed, not cookie-authenticated.
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+app.use("/api", (req, res, next) => {
+  if (!isDeployed() || SAFE_METHODS.has(req.method) || req.path === "/stripe/webhook") {
+    next();
+    return;
+  }
+  const origin = req.headers.origin;
+  if (!origin) {
+    next();
+    return;
+  }
+  const host = req.headers.host ?? "";
+  const sameOrigin = origin === `https://${host}` || origin === `http://${host}`;
+  if (sameOrigin || allowedOrigins.includes(origin)) {
+    next();
+    return;
+  }
+  res.status(403).json({ error: "Cross-site request rejected" });
+});
+
 // Per-IP ceilings on the routes that cost real money or hit third parties.
 // The DB-side per-user limiter and plan quota still apply on top of these.
 function routeLimit(limit: number) {
@@ -136,7 +162,8 @@ app.use(
   express.json({ limit: "10mb" }),
 );
 app.use(express.json({ limit: "1mb" }));
-app.use(express.urlencoded({ extended: true, limit: "100kb" }));
+// No route consumes form bodies, so none are parsed: an HTML form can't
+// smuggle a request body into a JSON endpoint.
 app.use(cookieParser());
 
 // COOP / COEP headers required by WebContainers

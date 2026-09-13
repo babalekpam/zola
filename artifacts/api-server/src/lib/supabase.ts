@@ -57,10 +57,14 @@ export function createSupabaseServerClient(req: Request, res: Response) {
             // cross-site navigations. They stay readable by the browser
             // client on purpose (@supabase/ssr shares the session through
             // cookies), so httpOnly is not forced here.
+            const { maxAge, ...rest } = (options ?? {}) as Record<string, unknown>;
             res.cookie(name, value, {
               path: "/",
               sameSite: "lax",
-              ...(options as Record<string, unknown>),
+              ...rest,
+              // @supabase/ssr expresses maxAge in seconds (cookie spec);
+              // Express's res.cookie expects milliseconds.
+              ...(typeof maxAge === "number" ? { maxAge: maxAge * 1000 } : {}),
               ...(isDeployed() ? { secure: true } : {}),
             });
           }

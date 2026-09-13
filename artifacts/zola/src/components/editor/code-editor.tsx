@@ -254,6 +254,13 @@ export function CodeEditor({ path, value, onChange, projectId }: Props) {
         theme="vs-dark"
         beforeMount={disableDiagnostics}
         onMount={((editorInstance, monacoInstance) => {
+          // MonacoEditor remounts per file (key={path}), so onMount runs
+          // again; the inline-completions provider is registered globally on
+          // the monaco instance and would otherwise stack up one per opened
+          // file, each firing its own request per typing pause.
+          disposablesRef.current.forEach((d) => d.dispose());
+          disposablesRef.current = [];
+
           // Stop the browser from spellchecking the rendered code text.
           const dom = editorInstance.getDomNode();
           if (dom) {
@@ -314,14 +321,15 @@ export function CodeEditor({ path, value, onChange, projectId }: Props) {
                   }
                   if (!completion || state.seq !== seq) return { items: [] };
 
-                  const lines = completion.split("\n");
+                  // The range is the span the completion replaces, so it must
+                  // be collapsed at the cursor. A range spanning the completion's
+                  // length would cover the existing suffix, and Monaco discards
+                  // an item whose range text isn't a prefix of its insertText.
                   const range = new monacoInstance.Range(
                     position.lineNumber,
                     position.column,
-                    position.lineNumber + lines.length - 1,
-                    lines.length === 1
-                      ? position.column + lines[0].length
-                      : lines[lines.length - 1].length + 1,
+                    position.lineNumber,
+                    position.column,
                   );
                   return { items: [{ insertText: completion, range }] };
                 } catch {

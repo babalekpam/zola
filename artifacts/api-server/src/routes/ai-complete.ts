@@ -60,6 +60,14 @@ async function guardInlineAi(
   return { supabase, userId };
 }
 
+// The language id is interpolated into the prompt and a markdown fence, so
+// only plain identifiers (typescript, c++, objective-c) get through.
+function sanitizeLanguage(value: unknown): string {
+  return typeof value === "string" && /^[A-Za-z0-9+#._-]{1,40}$/.test(value)
+    ? value
+    : "text";
+}
+
 function stripCodeFences(text: string): string {
   return text
     .trim()
@@ -85,8 +93,7 @@ router.post("/ai/complete", async (req, res) => {
       typeof body.prefix === "string" ? body.prefix.slice(0, MAX_PREFIX_CHARS) : "";
     const suffix =
       typeof body.suffix === "string" ? body.suffix.slice(0, MAX_SUFFIX_CHARS) : "";
-    const language =
-      typeof body.language === "string" ? body.language.slice(0, 40) : "text";
+    const language = sanitizeLanguage(body.language);
     const projectId = typeof body.projectId === "string" ? body.projectId : null;
     if (!prefix.trim() && !suffix.trim()) {
       res.status(400).json({ error: "prefix or suffix required" });
@@ -171,8 +178,7 @@ router.post("/ai/inline-edit", async (req, res) => {
       typeof body.instruction === "string"
         ? body.instruction.slice(0, MAX_INSTRUCTION_CHARS)
         : "";
-    const language =
-      typeof body.language === "string" ? body.language.slice(0, 40) : "text";
+    const language = sanitizeLanguage(body.language);
     const projectId = typeof body.projectId === "string" ? body.projectId : null;
     if (!code.trim() || !instruction.trim()) {
       res.status(400).json({ error: "code and instruction required" });
