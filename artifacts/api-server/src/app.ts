@@ -8,6 +8,7 @@ import router from "./routes";
 import sitesRouter, { customDomainMiddleware } from "./routes/sites";
 import { publicDbRouter } from "./routes/db";
 import { logger } from "./lib/logger";
+import { isDeployed } from "./lib/env";
 
 const app: Express = express();
 
@@ -19,6 +20,21 @@ app.use((_req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("X-DNS-Prefetch-Control", "off");
+  // HSTS only on real deployments (always HTTPS there); never in dev, where
+  // it would poison localhost. No includeSubDomains: customers' own domains
+  // are served through customDomainMiddleware and we must not pin theirs.
+  if (isDeployed()) {
+    res.setHeader("Strict-Transport-Security", "max-age=31536000");
+  }
+  next();
+});
+
+// API responses carry session-scoped JSON: never cache them in shared
+// caches and never let them be framed. Deployed sites (/sites) are excluded
+// because the workspace Webview embeds them on purpose.
+app.use("/api", (_req, res, next) => {
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Frame-Options", "DENY");
   next();
 });
 
@@ -70,25 +86,57 @@ app.use("/db", cors({ origin: true }), express.text({ type: "*/*", limit: "200kb
 app.use(publicDbRouter);
 app.use(sitesRouter);
 
-// CORS: allow the Vite frontend
+// CORS: allow the Vite frontend. Credentialed CORS must never reflect an
+// arbitrary origin on a deployment — that would let any site call the API
+// with the user's cookies — so with nothing configured, prod sends no CORS
+// headers at all (same-origin still works) and dev stays permissive.
 const allowedOrigins = [
   process.env.VITE_APP_URL,
   process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : undefined,
 ].filter(Boolean) as string[];
+if (allowedOrigins.length === 0 && isDeployed()) {
+  logger.warn(
+    "VITE_APP_URL is not set: cross-origin API access is disabled on this deployment",
+  );
+}
 
 app.use(
   cors({
-    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+    origin: allowedOrigins.length > 0 ? allowedOrigins : !isDeployed(),
     credentials: true,
   }),
+);
+
+// Per-IP ceilings on the routes that cost real money or hit third parties.
+// The DB-side per-user limiter and plan quota still apply on top of these.
+function routeLimit(limit: number) {
+  return rateLimit({ windowMs: 60_000, limit, standardHeaders: true, legacyHeaders: false });
+}
+app.use(["/api/chat", "/api/ai"], routeLimit(120));
+app.use(["/api/stripe/checkout", "/api/stripe/portal"], routeLimit(20));
+app.use(
+  [
+    "/api/projects/import",
+    "/api/projects/:id/github/push",
+    "/api/projects/:id/domains",
+    "/api/projects/:id/deployments",
+  ],
+  routeLimit(30),
 );
 
 // Raw body for Stripe webhook (must come before express.json())
 app.use("/api/stripe/webhook", express.raw({ type: "application/json" }));
 
-// 30mb so deployment uploads (built site assets, base64-encoded) fit.
-app.use(express.json({ limit: "30mb" }));
-app.use(express.urlencoded({ extended: true }));
+// Body limits are per route: only deployment uploads (built site assets,
+// base64-encoded) need 30mb, and file/snapshot saves need a few MB. Every
+// other endpoint gets 1mb so a large body can't be used to tie up workers.
+app.use("/api/projects/:id/deployments", express.json({ limit: "30mb" }));
+app.use(
+  ["/api/projects/:id/files", "/api/projects/:id/snapshots"],
+  express.json({ limit: "10mb" }),
+);
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true, limit: "100kb" }));
 app.use(cookieParser());
 
 // COOP / COEP headers required by WebContainers

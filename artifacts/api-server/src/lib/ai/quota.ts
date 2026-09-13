@@ -2,6 +2,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseAdminClient } from "../supabase";
 import { getPlan } from "../billing/plans";
+import { isDeployed } from "../env";
 
 // Monthly AI-request quotas exist because the platform sells AI on its own
 // provider keys (no BYOK): every call costs the platform real money, so every
@@ -27,12 +28,6 @@ const UUID_RE =
  *  unmetered — a way around the monthly quota. */
 function asUuid(value: string | null | undefined): string | null {
   return typeof value === "string" && UUID_RE.test(value) ? value : null;
-}
-
-/** True on a real deployment (Replit Autoscale sets REPLIT_DEPLOYMENT; other
- *  hosts set NODE_ENV=production). Local dev and preview sandboxes are neither. */
-function isDeployed(): boolean {
-  return process.env.NODE_ENV === "production" || !!process.env.REPLIT_DEPLOYMENT;
 }
 
 /** Human-readable reason for a rejected quota check (402 body). */

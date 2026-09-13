@@ -2,6 +2,7 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Request, Response } from "express";
+import { isDeployed } from "./env";
 
 // The Supabase credentials are stored under NEXT_PUBLIC_* secrets (leftover
 // from the original Next.js project). Read VITE_* first, then fall back so the
@@ -52,7 +53,16 @@ export function createSupabaseServerClient(req: Request, res: Response) {
         },
         setAll(toSet: { name: string; value: string; options?: CookieOptions }[]) {
           for (const { name, value, options } of toSet) {
-            res.cookie(name, value, options as Record<string, unknown>);
+            // Session cookies are HTTPS-only on deployments and never sent on
+            // cross-site navigations. They stay readable by the browser
+            // client on purpose (@supabase/ssr shares the session through
+            // cookies), so httpOnly is not forced here.
+            res.cookie(name, value, {
+              path: "/",
+              sameSite: "lax",
+              ...(options as Record<string, unknown>),
+              ...(isDeployed() ? { secure: true } : {}),
+            });
           }
         },
       },

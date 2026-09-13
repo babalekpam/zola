@@ -242,6 +242,8 @@ router.get("/projects/:id", async (req, res) => {
 router.delete("/projects/:id", async (req, res) => {
   const { id } = req.params;
   const supabase = createSupabaseServerClient(req, res);
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) { res.status(401).json({ error: "Unauthorized" }); return; }
   const { error } = await supabase.from("projects").delete().eq("id", id);
   if (error) { res.status(500).json({ error: error.message }); return; }
   res.json({ ok: true });
@@ -250,6 +252,8 @@ router.delete("/projects/:id", async (req, res) => {
 router.patch("/projects/:id", async (req, res) => {
   const { id } = req.params;
   const supabase = createSupabaseServerClient(req, res);
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) { res.status(401).json({ error: "Unauthorized" }); return; }
   const body = req.body as Partial<{
     name: string;
     description: string;
@@ -281,6 +285,8 @@ router.patch("/projects/:id", async (req, res) => {
 router.put("/projects/:id/files", async (req, res) => {
   const { id: projectId } = req.params;
   const supabase = createSupabaseServerClient(req, res);
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) { res.status(401).json({ error: "Unauthorized" }); return; }
   const body = req.body as { files: { path: string; content: string }[] };
   if (!Array.isArray(body.files)) { res.status(400).json({ error: "files required" }); return; }
 
@@ -307,6 +313,8 @@ router.put("/projects/:id/files", async (req, res) => {
 router.delete("/projects/:id/files", async (req, res) => {
   const { id: projectId } = req.params;
   const supabase = createSupabaseServerClient(req, res);
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) { res.status(401).json({ error: "Unauthorized" }); return; }
   const path = req.query.path as string | undefined;
   if (!path) { res.status(400).json({ error: "path required" }); return; }
 

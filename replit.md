@@ -71,7 +71,7 @@ Zola is a Replit-style, AI-first coding platform: users describe an app in chat,
 - The KV capability token must NEVER be a readable column on `projects` — public projects are world-readable and the token grants writes. It lives in `project_db_tokens` (RLS on, no policies, service-role only) and is only returned by GET /api/projects/:id to users passing `has_project_access`.
 - WebContainer needs cross-origin isolation (COOP/COEP headers in `vite.config.ts`) and an API key (`VITE_WEBCONTAINER_API_KEY`) on non-localhost origins.
 - Express 5 route syntax: wildcards are named (`/sites/:slug{/*splat}`); `*splat` alone requires ≥1 segment.
-- `express.json` limit is raised to 30 MB for deployment uploads; `/db` uses `express.text` and is mounted before the credentialed CORS policy.
+- `express.json` limits are per route: 30 MB on deployment uploads, 10 MB on file/snapshot saves, 1 MB everywhere else; `/db` uses `express.text` and is mounted before the credentialed CORS policy. Deployments (`REPLIT_DEPLOYMENT` or `NODE_ENV=production`) add HSTS, secure session cookies, fail-closed CORS when `VITE_APP_URL` is unset, and a fail-closed AI quota when the service role key is missing.
 - MCP servers are dialled on every chat turn; there is no connection pool. Keep the per-server timeouts in `lib/mcp/client.ts` low — they sit on the critical path of the user's first token.
 - `project_mcp_servers.headers` holds live credentials. Never widen the redaction in `routes/mcp.ts` — the API returns header *names* only.
 - Keep every AI SDK package on the same generation (see `.agents/memory/ai-sdk-version-alignment.md`).
